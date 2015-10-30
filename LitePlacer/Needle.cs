@@ -16,6 +16,8 @@ namespace LitePlacer {
 
         private static FormMain MainForm;
 
+        public bool NeedleAlwaysCalibrated = false;
+
         public NeedleClass(FormMain MainF) {
             MainForm = MainF;
             Calibrated = false;
@@ -44,6 +46,7 @@ namespace LitePlacer {
         public bool ProbeDown() {
             MainForm.DisplayText("ProbeDown()", Color.PapayaWhip);
             ProbingMode(true);
+            MainForm.Cnc.DisableZAdjust();
             if (!CNC_Write("{\"gc\":\"G28.4 Z0\"}", 10000)) {
                 ProbingMode(false);
                 return false;
@@ -114,6 +117,20 @@ namespace LitePlacer {
 
 
         public bool Calibrate(double Tolerance) {
+            if (NeedleAlwaysCalibrated)
+            {
+                for (int i = 0; i <= 3600; i = i + 225)
+                {
+                    NeedlePoint Point = new NeedlePoint();
+                    Point.A = i / 10.0;
+                    Point.X = 0;
+                    Point.Y = 0;
+                    CalibrationPoints.Add(Point);
+                }
+                Calibrated = true;
+                return true;
+            }
+
             //setup camera
             MainForm.cameraView.UpCameraReset();
             MainForm.cameraView.SetUpCameraFunctionSet("Needle");
@@ -122,6 +139,8 @@ namespace LitePlacer {
             // we are already @ upcamera position
             MainForm.Cnc.Zup();
             Global.GoTo("Up Camera");
+
+            MainForm.Cnc.ZGuardOn();
 
             MainForm.Cnc.Zdown(Settings.Default.focus_height, true); //1 mm above PCB
             
@@ -152,6 +171,25 @@ namespace LitePlacer {
 
                 CalibrationPoints.Add(Point);
             }
+
+            // Calculate average midpoint
+            double AverageX = 0, AverageY = 0;
+            for (int i = 0; i < CalibrationPoints.Count; i = i + 1)
+            {
+                AverageX += CalibrationPoints[i].X;
+                AverageY += CalibrationPoints[i].Y;
+            }
+            AverageX = AverageX / (CalibrationPoints.Count);
+            AverageY = AverageY / (CalibrationPoints.Count);
+
+            // Subtract average midpoint from all calibrationpoints
+            for (int i = 0; i < CalibrationPoints.Count; i = i + 1)
+            {
+                CalibrationPoints[i].X -= AverageX;
+                CalibrationPoints[i].Y -= AverageY;
+            }
+            
+
             Calibrated = true;
             MainForm.Cnc.Zup();
             MainForm.cameraView.SetUpCameraDefaults();

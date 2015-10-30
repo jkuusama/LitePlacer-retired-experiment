@@ -91,12 +91,12 @@ namespace LitePlacer {
             //load saved values
             var s = Properties.Settings.Default;
             if (s.UpCam_index != s.DownCam_index) {
-                if (s.DownCam_index > 0 && s.DownCam_index <= videoSources.Count+1) {
+                if (s.DownCam_index > 0 && s.DownCam_index <= videoSources.Count) {
                     DownCam_ComboBox.SelectedIndex = s.DownCam_index-1;
                     downVideoCapture.Start(DownCam_ComboBox.SelectedIndex);
                 }
 
-                if (s.UpCam_index > 0 && s.UpCam_index <= videoSources.Count+1  ) {
+                if (s.UpCam_index > 0 && s.UpCam_index <= videoSources.Count) {
                     UpCam_ComboBox.SelectedIndex = s.UpCam_index-1;
                     upVideoCapture.Start(UpCam_ComboBox.SelectedIndex);
                 }
@@ -430,7 +430,14 @@ namespace LitePlacer {
             DownCameraReset();
         }
 
-
+        public DialogResult ShowMessageBox(String message, String header, MessageBoxButtons buttons)
+        {
+/*            if (InvokeRequired)
+            {
+                return (DialogResult)Invoke(new PassStringStringReturnDialogResultDelegate(ShowMessageBox), message, header, buttons);
+            }*/
+            return MessageBox.Show(this, message, header, buttons);
+        }
 
      /*   private void DownCam_ComboBox_SelectedIndexChanged(object sender, EventArgs e) {
             Properties.Settings.Default.DownCam_index = DownCam_ComboBox.SelectedIndex+1;

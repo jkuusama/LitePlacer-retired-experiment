@@ -12,22 +12,33 @@ namespace LitePlacer {
     public class LeastSquaresMapping {
         readonly List<PartLocation> source;
         readonly List<PartLocation> dest;
-        private Matrix<double> Rotation, Offset;
+        private Matrix<double> Rotation, Offset, Scale;
+
+        private double ScaleX, ScaleY, OffsetX, OffsetY, Rotation_;
 
         public LeastSquaresMapping(List<PartLocation> from, List<PartLocation> to) { 
             source = from;
             dest = to;
             //Recompute();
-            Recompute2();
+            //Recompute2();
+            Recomputer3();
         }
 
         public override string ToString() {
-            return String.Format("Offset = {0}\nAngle = {1}",
+/*            return String.Format("Offset = {0}\nAngle = {1}",
                 new PartLocation(Offset) - Global.Instance.Locations.GetLocation("PCB Zero"),
-                Angle);
+                Angle);*/
+            return String.Format("Offset = {0}\nAngle = {1}",
+                OffsetX - Global.Instance.Locations.GetLocation("PCB Zero").X,
+                Rotation_);
         }
 
-        public double Angle { get { return  Math.Asin(Rotation[0, 1]) * -180d / Math.PI; } }
+        public double Angle { 
+            get { 
+                //return  Math.Asin(Rotation[0, 1]) * -180d / Math.PI;
+                return Math.Asin(Rotation_) * -180d / Math.PI;
+            } 
+        }
         private Matrix<double> _sc, _dc;
         private Matrix<double> SourceCentroid { get { if (_sc == null) _sc = PartLocation.Average(source).ToMatrix(); return _sc; } }
         private Matrix<double> DestCentroid { get { if (_dc == null) _dc = PartLocation.Average(dest).ToMatrix(); return _dc; } }
@@ -59,6 +70,107 @@ namespace LitePlacer {
             return s;
         }
 
+        public void Recomputer3()
+        {
+            // calculate centroids
+            double sourceCentroidX = 0, sourceCentroidY = 0, destCentroidX = 0, destCentroidY = 0;
+
+            int fiducialCount = 0;
+
+            List<PartLocation> sourceFiducials = new List<PartLocation>();
+            List<PartLocation> destFiducials = new List<PartLocation>();
+
+            PartLocation tempDest;
+
+            foreach (var fiducial in source.Where(part => part.physicalComponent.IsFiducial).ToArray())
+            {
+                sourceCentroidX += fiducial.physicalComponent.X_nominal;
+                sourceCentroidY += fiducial.physicalComponent.Y_nominal;
+                sourceFiducials.Add(fiducial);
+
+                tempDest = dest[source.IndexOf(fiducial)];
+
+                if (tempDest.physicalComponent != null) {
+                    destCentroidX += tempDest.physicalComponent.X_machine;
+                    destCentroidY += tempDest.physicalComponent.Y_machine;
+                } else {
+                    destCentroidX += tempDest.X;
+                    destCentroidY += tempDest.Y;
+                }
+                destFiducials.Add(tempDest);
+
+                fiducialCount++;
+            }
+            sourceCentroidX /= fiducialCount;
+            sourceCentroidY /= fiducialCount;
+
+            destCentroidX /= fiducialCount;
+            destCentroidY /= fiducialCount;
+
+            OffsetX = -sourceCentroidX + destCentroidX;
+            OffsetY = -sourceCentroidY + destCentroidY;
+
+            List <double> destRotation = new List<double>();
+            List <double> sourceRotation = new List<double>();
+            List <double> destOffset = new List<double>();
+            List <double> sourceOffset = new List<double>();
+            List <double> scale = new List<double>();
+            List<double> rotationOffset = new List<double>();
+
+            ScaleX = 0; ScaleY = 0; Rotation_ = 0;
+
+            // Calculate offsets from centroids, rotation from source to destination and scale difference
+            PartLocation sourceFiducial = null, destFiducial = null;
+            for (int i=0; i<fiducialCount; i++) {
+                sourceFiducial = sourceFiducials.ElementAt(i);
+                destFiducial = destFiducials.ElementAt(i);
+
+                sourceOffset.Add(Math.Sqrt(Math.Pow(sourceFiducial.X - 
+                    sourceCentroidX, 2) + Math.Pow(sourceFiducial.Y -
+                    sourceCentroidY, 2)));
+                destOffset.Add(Math.Sqrt(Math.Pow(destFiducial.X -
+                    destCentroidX, 2) + Math.Pow(destFiducial.Y -
+                    destCentroidY, 2)));
+
+                sourceRotation.Add(Math.Asin((sourceFiducial.Y - sourceCentroidY) /
+                    sourceOffset[i]));
+                if ((sourceFiducial.X - sourceCentroidX) < 0) { 
+                    sourceRotation[i] = Math.PI - sourceRotation[i]; }
+                if (sourceRotation[i] < 0) { sourceRotation[i] += Math.PI * 2; }
+                
+                destRotation.Add(Math.Asin((destFiducial.Y - destCentroidY) /
+                    destOffset[i]));
+                if ((destFiducial.X - destCentroidX) < 0) {
+                    destRotation[i] = Math.PI - destRotation[i]; }
+                if (destRotation[i] < 0) { destRotation[i] += Math.PI * 2; }
+
+                rotationOffset.Add(destRotation[i] - sourceRotation[i]);
+
+                scale.Add(destOffset[i] / sourceOffset[i]);
+
+                Rotation_ += rotationOffset[i];
+                ScaleX += (destFiducial.X - destCentroidX) / (sourceFiducial.X - sourceCentroidX);
+                ScaleY += (destFiducial.Y - destCentroidY) / (sourceFiducial.Y - sourceCentroidY);
+            }
+
+            Rotation_ /= fiducialCount;
+            ScaleX /= fiducialCount;
+            ScaleY /= fiducialCount;
+        }
+
+        public PartLocation Map2(PartLocation from)
+        {
+            if (ScaleX == 0 || ScaleY == 0) throw new Exception("LeastSquareMapping not intialized");
+
+            var p = new PartLocation(from);
+
+            p.X = (from.X + OffsetX) * ScaleX;
+            // Why there's a -1 necessary here is beyond me but it works so
+            p.Y = (from.Y + OffsetY) * ScaleY - 1;
+            p.Rotate(Rotation_);
+
+            return p;
+        }
 
         // this is directly from the wikipedia page on Kabsh Algorithm
         public void Recompute2() {
@@ -144,8 +256,8 @@ namespace LitePlacer {
             if (Rotation == null || Offset == null) throw new Exception("LeastSquareMapping not intialized");
 
             var x = from.ToMatrix();
-            //var y = Rotation * x + Offset;
-            var y = (Rotation * (x-SourceCentroid)) + Offset + SourceCentroid; //shift point to center, apply rotation, then shift to the destination
+            var y = (Rotation * (x - SourceCentroid)) + Offset + SourceCentroid; //shift point to center, apply rotation, then shift to the destination
+
             var p = new PartLocation(y) {A = from.A + Angle};
             return p;
         }
@@ -157,7 +269,7 @@ namespace LitePlacer {
         public double RMSError() {
             double rms_error = 0;
             for (int i = 0; i < source.Count; i++) {
-                var b = Map(source[i]);
+                var b = Map2(source[i]);
                 rms_error += Math.Pow(b.DistanceTo(dest[i]), 2);
             }
             rms_error = Math.Sqrt(rms_error);
@@ -171,14 +283,14 @@ namespace LitePlacer {
         /// </summary>
         /// <returns></returns>
         public double MaxFiducialMovement() {
-            Global.Instance.DisplayText(String.Format("Offset = {0}  Angle = {1}", new PartLocation(Offset) - Global.Instance.Locations.GetLocation("PCB Zero") , Angle), System.Drawing.Color.Purple);
+//            Global.Instance.DisplayText(String.Format("Offset = {0}  Angle = {1}", new PartLocation(Offset) - Global.Instance.Locations.GetLocation("PCB Zero") , Angle), System.Drawing.Color.Purple);
             List<double> distances = new List<double>();
             for (int i = 0; i < source.Count; i++) {
                 var s = new PartLocation(source[i]);
                 var d = new PartLocation(dest[i]);
-                var m = Map(source[i]);
+                var m = Map2(source[i]);
                // Global.Instance.DisplayText(String.Format("Source {0}  Dest {1}  Mapped {2}", s, d, m), System.Drawing.Color.Purple);
-                distances.Add(Map(source[i]).DistanceTo(dest[i]));
+                distances.Add(Map2(source[i]).DistanceTo(dest[i]));
             }
             return distances.Max();
         }

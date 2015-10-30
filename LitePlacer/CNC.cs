@@ -16,12 +16,14 @@ namespace LitePlacer {
         public bool JoggingBusy;
         public bool AbortPlacement;
 
+        public bool Simulation = false;
+
         private bool _Zguard = true;
         public void ZGuardOn() { _Zguard = true; }
         public void ZGuardOff() { _Zguard = false; }
 
-        public bool Connected { get { return Com.IsOpen; } }
-
+        public bool Connected { get { if (Simulation) { return true; } else { return Com.IsOpen; } } }
+        
         private readonly SlackCompensationManager SlackCompensationX = new SlackCompensationManager() { RequiredDistance = .4 };
         private readonly SlackCompensationManager SlackCompensationY = new SlackCompensationManager() { RequiredDistance = .4 };
         private readonly SlackCompensationManager SlackCompensationZ = new SlackCompensationManager() { RequiredDistance = 1 };
@@ -50,6 +52,7 @@ namespace LitePlacer {
             // For now, just see that the port opens. 
             // TODO: check that there isTinyG, not just any comm port.
             // TODO: check/set default values
+            if (Simulation) { return true; }
 
             if (Connected) Com.Close();
             Com.Open(name);
@@ -59,6 +62,8 @@ namespace LitePlacer {
 
 
         public bool RawWrite(string command) {
+            if (Simulation) { return true; }
+
             if (!Com.IsOpen) {
                 MainForm.DisplayText("###" + command + " discarded, com not open");
                 return false;
@@ -81,6 +86,13 @@ namespace LitePlacer {
         public static double SquareCorrection { get; set; }
         private static double CurrX;
         private static double _trueX;
+        private static double _trueY;
+
+        private static bool LastMoveZAdjusted = true;
+        public void DisableZAdjust()
+        {
+            LastMoveZAdjusted = false;
+        }
 
         public PartLocation XYLocation {
             get { return new PartLocation(CurrentX, CurrentY); }
@@ -103,6 +115,8 @@ namespace LitePlacer {
         public static void setCurrX(double x) {
             _trueX = x;
             CurrX = x - CurrY * SquareCorrection;
+
+            if (MainForm.Cnc.Simulation) { Global.Instance.mainForm.UpdatePositionDisplay(); }
         }
 
         private static double CurrY;
@@ -112,8 +126,11 @@ namespace LitePlacer {
         }
 
         public static void setCurrY(double y) {
+            _trueY = y;
             CurrY = y;
             CurrX = _trueX - CurrY * SquareCorrection;
+
+            if (MainForm.Cnc.Simulation) { Global.Instance.mainForm.UpdatePositionDisplay(); }
         }
 
         private static double CurrZ;
@@ -123,6 +140,10 @@ namespace LitePlacer {
         }
         public static void setCurrZ(double z) {
             CurrZ = z;
+            CurrX = _trueX - CurrY * SquareCorrection;
+            CurrY = _trueY;
+
+            if (MainForm.Cnc.Simulation) { Global.Instance.mainForm.UpdatePositionDisplay(); }
         }
 
 
@@ -147,10 +168,15 @@ namespace LitePlacer {
 
         //  public bool IgnoreError { get; set; }
         public int LastStatusCode { get; private set; } //not sure what the relevance of this is but it's the only thing interesting in the f array returned
+        public int CNC_LastWriteStatus;
+
         //  f: (1) revision number, (2) status code, (3) the number of bytes pulled from RX buffer for this command (including the terminating LF), and (4) checksum (more details provided later).
         public void InterpretLine(string line) {
             JObject o = JObject.Parse(line);
-            if (o["f"] != null) LastStatusCode = (int)o["f"][1];
+            if (o["f"] != null) {
+                LastStatusCode = (int)o["f"][1];
+           //     if (LastStatusCode == 0) _readyEvent.Set();
+            }
 
             // This is called from SerialComm dataReceived, and runs in a separate thread than UI            
             MainForm.DisplayText(line, Color.Gray);
@@ -283,7 +309,11 @@ namespace LitePlacer {
                 _readyEvent.Set();
 
             }
-
+            
+            if ((o["f"] != null) && ((string) o["f"][1] == "0"))
+            {
+                _readyEvent.Set();
+            }
         }  // end InterpretLine()
 
         // =================================================================================
@@ -323,6 +353,15 @@ namespace LitePlacer {
 
 
         public bool CNC_Home_m(string axis) {
+            if (Simulation) {
+                CurrX = 0;
+                CurrY = 0;
+                CurrZ = 0;
+                CurrA = 0;
+                Global.Instance.mainForm.UpdatePositionDisplay();
+                return true;  
+            }
+
             if (!CNC_Write_m("{\"gc\":\"G28.2 " + axis + "0\"}", 10000)) {
                 ShowSimpleMessageBox("Homing operation mechanical step failed, CNC issue");
                 return false;
@@ -351,13 +390,15 @@ namespace LitePlacer {
         }
 
         bool CNC_BlockingWriteDone;
-
         private void CNC_BlockingWrite_thread(string cmd) {
+            CNC_LastWriteStatus = -1;
             _readyEvent.Reset();
             Com.Write(cmd);
             _readyEvent.Wait();
             CNC_BlockingWriteDone = true;
         }
+
+        //public bool CNC_IsBusy() { return !CNC_BlockingWriteDone;  }
 
 
         public bool CNC_SetValue(string para, int value) {
@@ -412,7 +453,6 @@ namespace LitePlacer {
         }
 
 
-
         private void CNC_BlockingMove_thread(double? X = null, double? Y = null, double? Z = null, double? A = null) {
             if (!SlackCompensation) Move(X, Y, Z, A);
             else {
@@ -451,7 +491,7 @@ namespace LitePlacer {
             if ((X != null || Y != null) && !CNC_MoveIsSafe_m(new PartLocation(X, Y))) return false;
 
 
-            if (!Connected) {
+            if (!Connected && !Simulation) {
                 ShowSimpleMessageBox("CNC_XY: Cnc not connected");
                 return false;
             }
@@ -490,6 +530,7 @@ namespace LitePlacer {
             if (cmd.Contains("A")) {
                 MainForm.DisplayText("** " + cmd, Color.Red);
             }
+            if (Simulation) { return; }
             _readyEvent.Reset();
             Com.Write("{\"gc\":\"" + "G0 " + cmd + "\"}");
             _readyEvent.Wait();
@@ -499,6 +540,7 @@ namespace LitePlacer {
             if (cmd.Contains("A")) {
                 MainForm.DisplayText("** " + cmd, Color.Red);
             }
+            if (Simulation) { return; }
             _readyEvent.Reset();
             string F = (speed == null) ? "" : "F" + ((int)speed).ToString();
             Com.Write("{\"gc\":\"" + "G1 " + F + " " + cmd + "\"}");
@@ -526,8 +568,31 @@ namespace LitePlacer {
             }
         }
 
+        public void UpdatePositionWithZcompensation()
+        {
+            Move(CurrentX, CurrentY, CurrentZ, CurrentA);
+        }
+
         private void Move(double? X = null, double? Y = null, double? Z = null, double? A = null) {
             // Global.Instance.DisplayText(string.Format("Move({0},{1},{2},{3})", X, Y, Z, A),Color.Blue);
+
+            // Compensate X/Y for Z movements
+            if (Z != null)
+            {
+                double zTravel = ((double) Z) - Properties.Settings.Default.zTravelTotalZ;
+                if (Properties.Settings.Default.zTravelTotalZ != 0) {
+                    if (X == null) { X = CurrentX; }
+                    if (Y == null) { Y = CurrentY; }
+ 
+                    X = X + (Properties.Settings.Default.zTravelXCompensation / Properties.Settings.Default.zTravelTotalZ * Z);
+                    Y = Y + (Properties.Settings.Default.zTravelYCompensation / Properties.Settings.Default.zTravelTotalZ * Z);
+                    LastMoveZAdjusted = true;
+                }
+            }
+            else
+            {
+                //LastMoveZAdjusted = false;
+            }
             if (Y != null && X != null) X = X + SquareCorrection * Y;
 
             //minimum movement distances required to make it count
@@ -543,21 +608,40 @@ namespace LitePlacer {
 
             //building list of commands
             string normalMove = "", slowMoveXY = "", slowMoveA = "", slowMoveZ = "";
-            if (X != null && dX > 1) normalMove += " X" + ((double)X).ToString(CultureInfo.InvariantCulture);
-            else if (X != null && dX != 0) slowMoveXY += " X" + ((double)X).ToString(CultureInfo.InvariantCulture);
-            if (Y != null && dY > 1) normalMove += " Y" + ((double)Y).ToString(CultureInfo.InvariantCulture);
-            else if (Y != null && dY != 0) slowMoveXY += " Y" + ((double)Y).ToString(CultureInfo.InvariantCulture);
-            if (Z != null && dZ > 1) normalMove += " Z" + ((double)Z).ToString(CultureInfo.InvariantCulture);
-            else if (Z != null && dZ != 0) slowMoveZ += " Z" + ((double)Z).ToString(CultureInfo.InvariantCulture);
+            if (X != null && dX > 1 && X != _trueX) normalMove += " X" + ((double)X).ToString(CultureInfo.InvariantCulture);
+            else if (X != null && X != _trueX /*&& dX != 0*/) slowMoveXY += " X" + ((double)X).ToString(CultureInfo.InvariantCulture);
+            if (Y != null && dY > 1 && Y != _trueY) normalMove += " Y" + ((double)Y).ToString(CultureInfo.InvariantCulture);
+            else if (Y != null && Y != _trueY /*&& dY != 0*/) slowMoveXY += " Y" + ((double)Y).ToString(CultureInfo.InvariantCulture);
+            
+            if (Z != null && dZ > 1 && Z != CurrZ) normalMove += " Z" + ((double)Z).ToString(CultureInfo.InvariantCulture);
+            else if (Z != null && Z != CurrZ /*&& dZ != 0*/) slowMoveZ += " Z" + ((double)Z).ToString(CultureInfo.InvariantCulture);
             // again, angle is a bit different given how we compute it
-            if (Math.Abs(dA) > 5) normalMove += " A" + ((double)A).ToString(CultureInfo.InvariantCulture);
-            else if (dA != 0) slowMoveA += " A" + ((double)A).ToString(CultureInfo.InvariantCulture);
+            if (Math.Abs(dA) > 5 && A != CurrA) normalMove += " A" + ((double)A).ToString(CultureInfo.InvariantCulture);
+            else if (dA != 0 && A != CurrA) slowMoveA += " A" + ((double)A).ToString(CultureInfo.InvariantCulture);
 
-            //the slow move speeds are specified here
-            if (normalMove.Length > 0) Tx_G0(normalMove);
+                //the slow move speeds are specified here
+
+            bool alreadyMoved = false;
+            // If the needle is going down, we should move the XY first, if the needle is going up, we should
+            // move the Z first
+            if (Z == null || CurrentZ > Z) {
+                if (slowMoveZ.Length > 0) Tx_G1(null, slowMoveZ);
+                if (normalMove.Length > 0) Tx_G0(normalMove);
+                alreadyMoved = true;
+            }
             if (slowMoveXY.Length > 0) Tx_G1((int?)Properties.Settings.Default.CNC_SmallMovementSpeed, slowMoveXY);
             if (slowMoveA.Length > 0) Tx_G1(3000, slowMoveA);
-            if (slowMoveZ.Length > 0) Tx_G1(null, slowMoveZ);
+            if (!alreadyMoved)
+            {
+                if (normalMove.Length > 0) Tx_G0(normalMove);
+                if (slowMoveZ.Length > 0) Tx_G1(null, slowMoveZ);
+            }
+
+            // Make sure variables are updated even if no status report has come in yet
+            // should be safe as they should be written over by any status report
+            if (X != null) { setCurrX((double)X); }
+            if (Y != null) { setCurrY((double)Y); }
+            if (Z != null) { setCurrZ((double)Z); }
         }
 
 

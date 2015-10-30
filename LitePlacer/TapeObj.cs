@@ -121,7 +121,7 @@ namespace LitePlacer {
         [XmlIgnore]public double TapeAngle { get { return TapeOrientation.ToDegrees(); } }
         [XmlIgnore]public double DeltaAngle { get { return TapeAngle - OriginalTapeOrientationVector.ToDegrees(); } }
         [XmlIgnore]public double PartAngle { get { return OriginalPartOrientationVector.ToDegrees() + DeltaAngle; } }
-        private PartLocation TapeOrientation { get { if (tapeOrientation == null) return OriginalTapeOrientationVector; return tapeOrientation; } }
+        public PartLocation TapeOrientation { get { if (tapeOrientation == null) return OriginalTapeOrientationVector; return tapeOrientation; } }
         public PartLocation OriginalTapeOrientationVector { get { return OrientationToVector(OriginalTapeOrientation); } }
         public PartLocation OriginalPartOrientationVector { get { return OrientationToVector(OriginalPartOrientation); } }
 
@@ -209,6 +209,14 @@ namespace LitePlacer {
             return ID;
         }
 
+        public PartLocation LastHole;
+        public bool IsLocationBased = false;
+
+        public bool SetTapeOrientation(double X, double Y) {
+            TapeOrientation.X = X;
+            TapeOrientation.Y = Y;
+            return true;
+        }
     }
 }
 

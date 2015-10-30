@@ -33,8 +33,8 @@ namespace LitePlacer
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle9 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle10 = new System.Windows.Forms.DataGridViewCellStyle();
             this.TestNeedleRecognition_button = new System.Windows.Forms.Button();
             this.textBoxSendtoTinyG = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
@@ -120,6 +120,7 @@ namespace LitePlacer
             this.ZUp_button = new System.Windows.Forms.Button();
             this.ZDown_button = new System.Windows.Forms.Button();
             this.tabPageBasicSetup = new System.Windows.Forms.TabPage();
+            this.button7 = new System.Windows.Forms.Button();
             this.clearTextBox_button = new System.Windows.Forms.Button();
             this.showTinyGComms_checkbox = new System.Windows.Forms.CheckBox();
             this.tabControl1 = new System.Windows.Forms.TabControl();
@@ -320,6 +321,10 @@ namespace LitePlacer
             this.Demo_button = new System.Windows.Forms.Button();
             this.tabControlPages = new System.Windows.Forms.TabControl();
             this.tabPage5 = new System.Windows.Forms.TabPage();
+            this.button8 = new System.Windows.Forms.Button();
+            this.calibrateZXYCompensation = new System.Windows.Forms.Button();
+            this.calibrateSkew = new System.Windows.Forms.Button();
+            this.calibrateXYmmRev = new System.Windows.Forms.Button();
             this.groupBox8 = new System.Windows.Forms.GroupBox();
             this.groupBox6 = new System.Windows.Forms.GroupBox();
             this.vacuumDeltaADC_textbox = new System.Windows.Forms.TextBox();
@@ -336,6 +341,14 @@ namespace LitePlacer
             this.locationDelete_button = new System.Windows.Forms.Button();
             this.locationAdd_button = new System.Windows.Forms.Button();
             this.groupBox7 = new System.Windows.Forms.GroupBox();
+            this.ZCorrectionDeltaZ = new System.Windows.Forms.TextBox();
+            this.label62 = new System.Windows.Forms.Label();
+            this.ZCorrectionY = new System.Windows.Forms.TextBox();
+            this.label61 = new System.Windows.Forms.Label();
+            this.ZCorrectionX = new System.Windows.Forms.TextBox();
+            this.label60 = new System.Windows.Forms.Label();
+            this.HeightOffsetLabel = new System.Windows.Forms.Label();
+            this.HeightOffsetButton = new System.Windows.Forms.Button();
             this.label54 = new System.Windows.Forms.Label();
             this.label53 = new System.Windows.Forms.Label();
             this.UpCalibMoveDistance_textbox = new System.Windows.Forms.TextBox();
@@ -382,13 +395,14 @@ namespace LitePlacer
             this.takePhotosOfComponentsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.quickAddMultipleTapesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.rescalAllTapesForAvailablePartsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
+            this.pickupMultipleComponentsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.jobOperationsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetAllPlacedComponentsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.needleToFocus_button = new System.Windows.Forms.Button();
             this.zguardoff_button = new System.Windows.Forms.Button();
             this.smallDebugWindow = new System.Windows.Forms.RichTextBox();
-            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
-            this.pickupMultipleComponentsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.groupBox9 = new System.Windows.Forms.GroupBox();
             this.Tapes_tabPage.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.Tapes_dataGridView)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tapeObjBindingSource)).BeginInit();
@@ -428,6 +442,7 @@ namespace LitePlacer
             this.groupBox4.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.menuStrip1.SuspendLayout();
+            this.groupBox9.SuspendLayout();
             this.SuspendLayout();
             // 
             // TestNeedleRecognition_button
@@ -863,17 +878,18 @@ namespace LitePlacer
             // 
             // button2
             // 
-            this.button2.Location = new System.Drawing.Point(266, 547);
+            this.button2.Location = new System.Drawing.Point(90, 66);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(75, 23);
+            this.button2.Size = new System.Drawing.Size(75, 42);
             this.button2.TabIndex = 134;
-            this.button2.Text = "button2";
+            this.button2.Text = "Calibrate All";
+            this.toolTip1.SetToolTip(this.button2, "Do all calibrations, requires the calibration paper");
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(264, 521);
+            this.button1.Location = new System.Drawing.Point(721, 524);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 133;
@@ -1150,6 +1166,7 @@ namespace LitePlacer
             this.UpCameraBoxX_textBox.Size = new System.Drawing.Size(46, 20);
             this.UpCameraBoxX_textBox.TabIndex = 59;
             this.toolTip1.SetToolTip(this.UpCameraBoxX_textBox, "Set the true size of the box on the image.");
+            this.UpCameraBoxX_textBox.TextChanged += new System.EventHandler(this.UpCameraBoxX_textBox_TextChanged);
             this.UpCameraBoxX_textBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.UpCameraBoxX_textBox_KeyPress);
             this.UpCameraBoxX_textBox.Leave += new System.EventHandler(this.UpCameraBoxX_textBox_Leave);
             // 
@@ -1259,7 +1276,7 @@ namespace LitePlacer
             // 
             this.label115.AutoSize = true;
             this.label115.Font = new System.Drawing.Font("Microsoft Sans Serif", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label115.Location = new System.Drawing.Point(261, 499);
+            this.label115.Location = new System.Drawing.Point(718, 502);
             this.label115.Name = "label115";
             this.label115.Size = new System.Drawing.Size(56, 18);
             this.label115.TabIndex = 49;
@@ -1289,6 +1306,7 @@ namespace LitePlacer
             // 
             // tabPageBasicSetup
             // 
+            this.tabPageBasicSetup.Controls.Add(this.button7);
             this.tabPageBasicSetup.Controls.Add(this.clearTextBox_button);
             this.tabPageBasicSetup.Controls.Add(this.showTinyGComms_checkbox);
             this.tabPageBasicSetup.Controls.Add(this.tabControl1);
@@ -1315,6 +1333,13 @@ namespace LitePlacer
             this.tabPageBasicSetup.TabIndex = 1;
             this.tabPageBasicSetup.Text = "Hardware Setup";
             this.tabPageBasicSetup.UseVisualStyleBackColor = true;
+            // 
+            // button7
+            // 
+            this.button7.Location = new System.Drawing.Point(0, 0);
+            this.button7.Name = "button7";
+            this.button7.Size = new System.Drawing.Size(75, 23);
+            this.button7.TabIndex = 0;
             // 
             // clearTextBox_button
             // 
@@ -3227,14 +3252,14 @@ namespace LitePlacer
             this.JobData_GridView.AllowUserToAddRows = false;
             this.JobData_GridView.AutoGenerateColumns = false;
             this.JobData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle9.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle9.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle9.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle9.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle9.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle9.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle9.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle9;
             this.JobData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.JobData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.countDataGridViewTextBoxColumn,
@@ -3315,14 +3340,14 @@ namespace LitePlacer
             this.CadData_GridView.AutoGenerateColumns = false;
             this.CadData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.CadData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
-            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle10.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle10.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle10.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F);
+            dataGridViewCellStyle10.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle10.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle10.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle10.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle10;
             this.CadData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.CadData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.designatorDataGridViewTextBoxColumn,
@@ -3489,13 +3514,13 @@ namespace LitePlacer
             // 
             // tabPage5
             // 
+            this.tabPage5.Controls.Add(this.groupBox9);
             this.tabPage5.Controls.Add(this.groupBox8);
             this.tabPage5.Controls.Add(this.groupBox6);
             this.tabPage5.Controls.Add(this.groupBox5);
             this.tabPage5.Controls.Add(this.groupBox7);
             this.tabPage5.Controls.Add(this.groupBox12);
             this.tabPage5.Controls.Add(this.groupBox4);
-            this.tabPage5.Controls.Add(this.button2);
             this.tabPage5.Controls.Add(this.button1);
             this.tabPage5.Controls.Add(this.label115);
             this.tabPage5.Controls.Add(this.instructions_label);
@@ -3506,6 +3531,51 @@ namespace LitePlacer
             this.tabPage5.TabIndex = 7;
             this.tabPage5.Text = "Calibrations & Locations";
             this.tabPage5.UseVisualStyleBackColor = true;
+            // 
+            // button8
+            // 
+            this.button8.Location = new System.Drawing.Point(173, 19);
+            this.button8.Name = "button8";
+            this.button8.Size = new System.Drawing.Size(75, 42);
+            this.button8.TabIndex = 154;
+            this.button8.Text = "Verify placements";
+            this.toolTip1.SetToolTip(this.button8, "Verify fiducial and a few random component placements");
+            this.button8.UseVisualStyleBackColor = true;
+            this.button8.Click += new System.EventHandler(this.button8_Click);
+            // 
+            // calibrateZXYCompensation
+            // 
+            this.calibrateZXYCompensation.Location = new System.Drawing.Point(90, 19);
+            this.calibrateZXYCompensation.Name = "calibrateZXYCompensation";
+            this.calibrateZXYCompensation.Size = new System.Drawing.Size(75, 42);
+            this.calibrateZXYCompensation.TabIndex = 153;
+            this.calibrateZXYCompensation.Text = "Calibrate Z XY comp.";
+            this.toolTip1.SetToolTip(this.calibrateZXYCompensation, "Calibrate the XY correction over the Z axis using the calibration paper");
+            this.calibrateZXYCompensation.UseVisualStyleBackColor = true;
+            this.calibrateZXYCompensation.Click += new System.EventHandler(this.calibrateZXYCompensation_Click);
+            // 
+            // calibrateSkew
+            // 
+            this.calibrateSkew.Location = new System.Drawing.Point(9, 66);
+            this.calibrateSkew.Name = "calibrateSkew";
+            this.calibrateSkew.Size = new System.Drawing.Size(75, 42);
+            this.calibrateSkew.TabIndex = 152;
+            this.calibrateSkew.Text = "calibrate skew";
+            this.toolTip1.SetToolTip(this.calibrateSkew, "Calibrate the squareness correction using the calibration paper");
+            this.calibrateSkew.UseVisualStyleBackColor = true;
+            this.calibrateSkew.Click += new System.EventHandler(this.calibrateSkew_Click);
+            // 
+            // calibrateXYmmRev
+            // 
+            this.calibrateXYmmRev.Location = new System.Drawing.Point(9, 19);
+            this.calibrateXYmmRev.Name = "calibrateXYmmRev";
+            this.calibrateXYmmRev.Size = new System.Drawing.Size(75, 42);
+            this.calibrateXYmmRev.TabIndex = 151;
+            this.calibrateXYmmRev.Text = "calibrate XY mm/rev";
+            this.toolTip1.SetToolTip(this.calibrateXYmmRev, "Calibrate the mm/revolution movements of the X & Y axis using the calibration pap" +
+        "er");
+            this.calibrateXYmmRev.UseVisualStyleBackColor = true;
+            this.calibrateXYmmRev.Click += new System.EventHandler(this.calibrateXYmmRev_Click);
             // 
             // groupBox8
             // 
@@ -3667,6 +3737,14 @@ namespace LitePlacer
             // 
             // groupBox7
             // 
+            this.groupBox7.Controls.Add(this.ZCorrectionDeltaZ);
+            this.groupBox7.Controls.Add(this.label62);
+            this.groupBox7.Controls.Add(this.ZCorrectionY);
+            this.groupBox7.Controls.Add(this.label61);
+            this.groupBox7.Controls.Add(this.ZCorrectionX);
+            this.groupBox7.Controls.Add(this.label60);
+            this.groupBox7.Controls.Add(this.HeightOffsetLabel);
+            this.groupBox7.Controls.Add(this.HeightOffsetButton);
             this.groupBox7.Controls.Add(this.label54);
             this.groupBox7.Controls.Add(this.label53);
             this.groupBox7.Controls.Add(this.UpCalibMoveDistance_textbox);
@@ -3696,6 +3774,95 @@ namespace LitePlacer
             this.groupBox7.TabIndex = 148;
             this.groupBox7.TabStop = false;
             this.groupBox7.Text = "Camera mmPerPixel";
+            // 
+            // ZCorrectionDeltaZ
+            // 
+            this.ZCorrectionDeltaZ.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ZCorrectionDeltaZ.Location = new System.Drawing.Point(65, 294);
+            this.ZCorrectionDeltaZ.Name = "ZCorrectionDeltaZ";
+            this.ZCorrectionDeltaZ.Size = new System.Drawing.Size(46, 20);
+            this.ZCorrectionDeltaZ.TabIndex = 159;
+            this.toolTip1.SetToolTip(this.ZCorrectionDeltaZ, "The Z range from 0 that the corrections span");
+            this.ZCorrectionDeltaZ.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.ZCorrectionDeltaZ_KeyPress);
+            this.ZCorrectionDeltaZ.Leave += new System.EventHandler(this.ZCorrectionDeltaZ_Leave);
+            // 
+            // label62
+            // 
+            this.label62.AutoSize = true;
+            this.label62.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label62.Location = new System.Drawing.Point(21, 297);
+            this.label62.Name = "label62";
+            this.label62.Size = new System.Drawing.Size(43, 13);
+            this.label62.TabIndex = 158;
+            this.label62.Text = "Z delta:";
+            this.toolTip1.SetToolTip(this.label62, "Set the true size of the box on the image.");
+            // 
+            // ZCorrectionY
+            // 
+            this.ZCorrectionY.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ZCorrectionY.Location = new System.Drawing.Point(162, 265);
+            this.ZCorrectionY.Name = "ZCorrectionY";
+            this.ZCorrectionY.Size = new System.Drawing.Size(46, 20);
+            this.ZCorrectionY.TabIndex = 157;
+            this.toolTip1.SetToolTip(this.ZCorrectionY, "Correction on the Y axis over the entire Z delta");
+            this.ZCorrectionY.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.ZCorrectionY_KeyPress);
+            this.ZCorrectionY.Leave += new System.EventHandler(this.ZCorrectionY_Leave);
+            // 
+            // label61
+            // 
+            this.label61.AutoSize = true;
+            this.label61.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label61.Location = new System.Drawing.Point(118, 268);
+            this.label61.Name = "label61";
+            this.label61.Size = new System.Drawing.Size(38, 13);
+            this.label61.TabIndex = 156;
+            this.label61.Text = "Y corr:";
+            this.toolTip1.SetToolTip(this.label61, "Set the true size of the box on the image.");
+            // 
+            // ZCorrectionX
+            // 
+            this.ZCorrectionX.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ZCorrectionX.Location = new System.Drawing.Point(64, 265);
+            this.ZCorrectionX.Name = "ZCorrectionX";
+            this.ZCorrectionX.Size = new System.Drawing.Size(46, 20);
+            this.ZCorrectionX.TabIndex = 155;
+            this.toolTip1.SetToolTip(this.ZCorrectionX, "Correction on the X axis over the entire Z delta");
+            this.ZCorrectionX.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.ZCorrectionX_KeyPress);
+            this.ZCorrectionX.Leave += new System.EventHandler(this.ZCorrectionX_Leave);
+            // 
+            // label60
+            // 
+            this.label60.AutoSize = true;
+            this.label60.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label60.Location = new System.Drawing.Point(20, 268);
+            this.label60.Name = "label60";
+            this.label60.Size = new System.Drawing.Size(38, 13);
+            this.label60.TabIndex = 154;
+            this.label60.Text = "X corr:";
+            this.toolTip1.SetToolTip(this.label60, "Set the true size of the box on the image.");
+            this.label60.Click += new System.EventHandler(this.label60_Click);
+            // 
+            // HeightOffsetLabel
+            // 
+            this.HeightOffsetLabel.AutoSize = true;
+            this.HeightOffsetLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.HeightOffsetLabel.Location = new System.Drawing.Point(99, 325);
+            this.HeightOffsetLabel.Name = "HeightOffsetLabel";
+            this.HeightOffsetLabel.Size = new System.Drawing.Size(16, 13);
+            this.HeightOffsetLabel.TabIndex = 153;
+            this.HeightOffsetLabel.Text = "---";
+            this.toolTip1.SetToolTip(this.HeightOffsetLabel, "Set the true size of the box on the image.");
+            // 
+            // HeightOffsetButton
+            // 
+            this.HeightOffsetButton.Location = new System.Drawing.Point(18, 320);
+            this.HeightOffsetButton.Name = "HeightOffsetButton";
+            this.HeightOffsetButton.Size = new System.Drawing.Size(75, 23);
+            this.HeightOffsetButton.TabIndex = 152;
+            this.HeightOffsetButton.Text = "Height offset";
+            this.toolTip1.SetToolTip(this.HeightOffsetButton, "Manual Z height to XY calibration");
+            this.HeightOffsetButton.UseVisualStyleBackColor = true;
+            this.HeightOffsetButton.Click += new System.EventHandler(this.HeightOffsetButton_Click);
             // 
             // label54
             // 
@@ -3902,16 +4069,16 @@ namespace LitePlacer
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel1});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 949);
+            this.statusStrip1.Location = new System.Drawing.Point(0, 941);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(839, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(855, 22);
             this.statusStrip1.TabIndex = 115;
             this.statusStrip1.Text = "statusStrip1";
             // 
             // toolStripStatusLabel1
             // 
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
-            this.toolStripStatusLabel1.Size = new System.Drawing.Size(118, 17);
+            this.toolStripStatusLabel1.Size = new System.Drawing.Size(109, 17);
             this.toolStripStatusLabel1.Text = "toolStripStatusLabel1";
             // 
             // menuStrip1
@@ -3924,7 +4091,7 @@ namespace LitePlacer
             this.jobOperationsToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(839, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(855, 24);
             this.menuStrip1.TabIndex = 116;
             this.menuStrip1.Text = "menuStrip1";
             // 
@@ -3938,44 +4105,44 @@ namespace LitePlacer
             this.toolStripSeparator1,
             this.quitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(35, 20);
             this.fileToolStripMenuItem.Text = "File";
             // 
             // loadJobFileToolStripMenuItem
             // 
             this.loadJobFileToolStripMenuItem.Name = "loadJobFileToolStripMenuItem";
-            this.loadJobFileToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
+            this.loadJobFileToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
             this.loadJobFileToolStripMenuItem.Text = "Load Job File";
             this.loadJobFileToolStripMenuItem.Click += new System.EventHandler(this.loadJobFileToolStripMenuItem_Click);
             // 
             // saveJobFileToolStripMenuItem
             // 
             this.saveJobFileToolStripMenuItem.Name = "saveJobFileToolStripMenuItem";
-            this.saveJobFileToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
+            this.saveJobFileToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
             this.saveJobFileToolStripMenuItem.Text = "Save Job File";
             this.saveJobFileToolStripMenuItem.Click += new System.EventHandler(this.saveJobFileToolStripMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(188, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(173, 6);
             // 
             // loadCADFileToolStripMenuItem
             // 
             this.loadCADFileToolStripMenuItem.Name = "loadCADFileToolStripMenuItem";
-            this.loadCADFileToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
+            this.loadCADFileToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
             this.loadCADFileToolStripMenuItem.Text = "Load Pick-n-Place File";
             this.loadCADFileToolStripMenuItem.Click += new System.EventHandler(this.loadCADFileToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(188, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(173, 6);
             // 
             // quitToolStripMenuItem
             // 
             this.quitToolStripMenuItem.Name = "quitToolStripMenuItem";
-            this.quitToolStripMenuItem.Size = new System.Drawing.Size(191, 22);
+            this.quitToolStripMenuItem.Size = new System.Drawing.Size(176, 22);
             this.quitToolStripMenuItem.Text = "Quit";
             this.quitToolStripMenuItem.Click += new System.EventHandler(this.quitToolStripMenuItem_Click);
             // 
@@ -3986,34 +4153,34 @@ namespace LitePlacer
             this.loadUserDefaultsToolStripMenuItem,
             this.saveUserDefaultsToolStripMenuItem});
             this.tinyGToolStripMenuItem.Name = "tinyGToolStripMenuItem";
-            this.tinyGToolStripMenuItem.Size = new System.Drawing.Size(50, 20);
+            this.tinyGToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
             this.tinyGToolStripMenuItem.Text = "TinyG";
             // 
             // resetToDefaultsToolStripMenuItem
             // 
             this.resetToDefaultsToolStripMenuItem.Name = "resetToDefaultsToolStripMenuItem";
-            this.resetToDefaultsToolStripMenuItem.Size = new System.Drawing.Size(207, 22);
+            this.resetToDefaultsToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
             this.resetToDefaultsToolStripMenuItem.Text = "Reset To Built-In Defaults";
             this.resetToDefaultsToolStripMenuItem.Click += new System.EventHandler(this.resetToDefaultsToolStripMenuItem_Click);
             // 
             // loadUserDefaultsToolStripMenuItem
             // 
             this.loadUserDefaultsToolStripMenuItem.Name = "loadUserDefaultsToolStripMenuItem";
-            this.loadUserDefaultsToolStripMenuItem.Size = new System.Drawing.Size(207, 22);
+            this.loadUserDefaultsToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
             this.loadUserDefaultsToolStripMenuItem.Text = "Load User Defaults";
             this.loadUserDefaultsToolStripMenuItem.Click += new System.EventHandler(this.loadUserDefaultsToolStripMenuItem_Click);
             // 
             // saveUserDefaultsToolStripMenuItem
             // 
             this.saveUserDefaultsToolStripMenuItem.Name = "saveUserDefaultsToolStripMenuItem";
-            this.saveUserDefaultsToolStripMenuItem.Size = new System.Drawing.Size(207, 22);
+            this.saveUserDefaultsToolStripMenuItem.Size = new System.Drawing.Size(197, 22);
             this.saveUserDefaultsToolStripMenuItem.Text = "Save User Defaults";
             this.saveUserDefaultsToolStripMenuItem.Click += new System.EventHandler(this.saveUserDefaultsToolStripMenuItem_Click);
             // 
             // goToLocationToolStripMenuItem
             // 
             this.goToLocationToolStripMenuItem.Name = "goToLocationToolStripMenuItem";
-            this.goToLocationToolStripMenuItem.Size = new System.Drawing.Size(97, 20);
+            this.goToLocationToolStripMenuItem.Size = new System.Drawing.Size(87, 20);
             this.goToLocationToolStripMenuItem.Text = "GoTo Location";
             // 
             // tapeToolStripMenuItem
@@ -4033,94 +4200,106 @@ namespace LitePlacer
             this.toolStripSeparator5,
             this.pickupMultipleComponentsToolStripMenuItem});
             this.tapeToolStripMenuItem.Name = "tapeToolStripMenuItem";
-            this.tapeToolStripMenuItem.Size = new System.Drawing.Size(45, 20);
+            this.tapeToolStripMenuItem.Size = new System.Drawing.Size(43, 20);
             this.tapeToolStripMenuItem.Text = "Tape";
             // 
             // saveToolStripMenuItem
             // 
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(258, 22);
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
             this.saveToolStripMenuItem.Text = "Save Default";
             this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
             // 
             // reLoadToolStripMenuItem
             // 
             this.reLoadToolStripMenuItem.Name = "reLoadToolStripMenuItem";
-            this.reLoadToolStripMenuItem.Size = new System.Drawing.Size(258, 22);
+            this.reLoadToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
             this.reLoadToolStripMenuItem.Text = "ReLoad Default";
             this.reLoadToolStripMenuItem.Click += new System.EventHandler(this.reLoadToolStripMenuItem_Click);
             // 
             // saveAsToolStripMenuItem
             // 
             this.saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
-            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(258, 22);
+            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
             this.saveAsToolStripMenuItem.Text = "Save As ...";
             this.saveAsToolStripMenuItem.Click += new System.EventHandler(this.saveAsToolStripMenuItem_Click);
             // 
             // loadToolStripMenuItem
             // 
             this.loadToolStripMenuItem.Name = "loadToolStripMenuItem";
-            this.loadToolStripMenuItem.Size = new System.Drawing.Size(258, 22);
+            this.loadToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
             this.loadToolStripMenuItem.Text = "Load ...";
             this.loadToolStripMenuItem.Click += new System.EventHandler(this.loadToolStripMenuItem_Click);
             // 
             // toolStripSeparator3
             // 
             this.toolStripSeparator3.Name = "toolStripSeparator3";
-            this.toolStripSeparator3.Size = new System.Drawing.Size(255, 6);
+            this.toolStripSeparator3.Size = new System.Drawing.Size(241, 6);
             // 
             // resetAllPickupZsToolStripMenuItem
             // 
             this.resetAllPickupZsToolStripMenuItem.Name = "resetAllPickupZsToolStripMenuItem";
-            this.resetAllPickupZsToolStripMenuItem.Size = new System.Drawing.Size(258, 22);
+            this.resetAllPickupZsToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
             this.resetAllPickupZsToolStripMenuItem.Text = "Reset All Pickup Zs";
             this.resetAllPickupZsToolStripMenuItem.Click += new System.EventHandler(this.resetAllPickupZsToolStripMenuItem_Click);
             // 
             // resetAllPlaceZsToolStripMenuItem
             // 
             this.resetAllPlaceZsToolStripMenuItem.Name = "resetAllPlaceZsToolStripMenuItem";
-            this.resetAllPlaceZsToolStripMenuItem.Size = new System.Drawing.Size(258, 22);
+            this.resetAllPlaceZsToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
             this.resetAllPlaceZsToolStripMenuItem.Text = "Reset All Place Zs";
             this.resetAllPlaceZsToolStripMenuItem.Click += new System.EventHandler(this.resetAllPlaceZsToolStripMenuItem_Click);
             // 
             // toolStripSeparator4
             // 
             this.toolStripSeparator4.Name = "toolStripSeparator4";
-            this.toolStripSeparator4.Size = new System.Drawing.Size(255, 6);
+            this.toolStripSeparator4.Size = new System.Drawing.Size(241, 6);
             // 
             // takePhotosOfComponentsToolStripMenuItem
             // 
             this.takePhotosOfComponentsToolStripMenuItem.Name = "takePhotosOfComponentsToolStripMenuItem";
-            this.takePhotosOfComponentsToolStripMenuItem.Size = new System.Drawing.Size(258, 22);
+            this.takePhotosOfComponentsToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
             this.takePhotosOfComponentsToolStripMenuItem.Text = "Take Photos Of Components";
             this.takePhotosOfComponentsToolStripMenuItem.Click += new System.EventHandler(this.takePhotosOfComponentsToolStripMenuItem_Click);
             // 
             // quickAddMultipleTapesToolStripMenuItem
             // 
             this.quickAddMultipleTapesToolStripMenuItem.Name = "quickAddMultipleTapesToolStripMenuItem";
-            this.quickAddMultipleTapesToolStripMenuItem.Size = new System.Drawing.Size(258, 22);
+            this.quickAddMultipleTapesToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
             this.quickAddMultipleTapesToolStripMenuItem.Text = "Quick Add Multiple Tapes";
             this.quickAddMultipleTapesToolStripMenuItem.Click += new System.EventHandler(this.tapesQuickAdd_button_Click);
             // 
             // rescalAllTapesForAvailablePartsToolStripMenuItem
             // 
             this.rescalAllTapesForAvailablePartsToolStripMenuItem.Name = "rescalAllTapesForAvailablePartsToolStripMenuItem";
-            this.rescalAllTapesForAvailablePartsToolStripMenuItem.Size = new System.Drawing.Size(258, 22);
+            this.rescalAllTapesForAvailablePartsToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
             this.rescalAllTapesForAvailablePartsToolStripMenuItem.Text = "Rescal All Tapes For Available Parts";
             this.rescalAllTapesForAvailablePartsToolStripMenuItem.Click += new System.EventHandler(this.rescalAllTapesForAvailablePartsToolStripMenuItem_Click);
+            // 
+            // toolStripSeparator5
+            // 
+            this.toolStripSeparator5.Name = "toolStripSeparator5";
+            this.toolStripSeparator5.Size = new System.Drawing.Size(241, 6);
+            // 
+            // pickupMultipleComponentsToolStripMenuItem
+            // 
+            this.pickupMultipleComponentsToolStripMenuItem.Name = "pickupMultipleComponentsToolStripMenuItem";
+            this.pickupMultipleComponentsToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
+            this.pickupMultipleComponentsToolStripMenuItem.Text = "Pickup Multiple Components";
+            this.pickupMultipleComponentsToolStripMenuItem.Click += new System.EventHandler(this.pickupMultipleComponentsToolStripMenuItem_Click);
             // 
             // jobOperationsToolStripMenuItem
             // 
             this.jobOperationsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.resetAllPlacedComponentsToolStripMenuItem});
             this.jobOperationsToolStripMenuItem.Name = "jobOperationsToolStripMenuItem";
-            this.jobOperationsToolStripMenuItem.Size = new System.Drawing.Size(98, 20);
+            this.jobOperationsToolStripMenuItem.Size = new System.Drawing.Size(92, 20);
             this.jobOperationsToolStripMenuItem.Text = "Job Operations";
             // 
             // resetAllPlacedComponentsToolStripMenuItem
             // 
             this.resetAllPlacedComponentsToolStripMenuItem.Name = "resetAllPlacedComponentsToolStripMenuItem";
-            this.resetAllPlacedComponentsToolStripMenuItem.Size = new System.Drawing.Size(229, 22);
+            this.resetAllPlacedComponentsToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
             this.resetAllPlacedComponentsToolStripMenuItem.Text = "Reset All Placed Components";
             this.resetAllPlacedComponentsToolStripMenuItem.Click += new System.EventHandler(this.resetAllPlacedComponentsToolStripMenuItem_Click);
             // 
@@ -4154,24 +4333,26 @@ namespace LitePlacer
             this.smallDebugWindow.TabIndex = 154;
             this.smallDebugWindow.Text = "";
             // 
-            // toolStripSeparator5
+            // groupBox9
             // 
-            this.toolStripSeparator5.Name = "toolStripSeparator5";
-            this.toolStripSeparator5.Size = new System.Drawing.Size(255, 6);
-            // 
-            // pickupMultipleComponentsToolStripMenuItem
-            // 
-            this.pickupMultipleComponentsToolStripMenuItem.Name = "pickupMultipleComponentsToolStripMenuItem";
-            this.pickupMultipleComponentsToolStripMenuItem.Size = new System.Drawing.Size(258, 22);
-            this.pickupMultipleComponentsToolStripMenuItem.Text = "Pickup Multiple Components";
-            this.pickupMultipleComponentsToolStripMenuItem.Click += new System.EventHandler(this.pickupMultipleComponentsToolStripMenuItem_Click);
+            this.groupBox9.Controls.Add(this.button2);
+            this.groupBox9.Controls.Add(this.calibrateZXYCompensation);
+            this.groupBox9.Controls.Add(this.calibrateXYmmRev);
+            this.groupBox9.Controls.Add(this.button8);
+            this.groupBox9.Controls.Add(this.calibrateSkew);
+            this.groupBox9.Location = new System.Drawing.Point(264, 506);
+            this.groupBox9.Name = "groupBox9";
+            this.groupBox9.Size = new System.Drawing.Size(254, 119);
+            this.groupBox9.TabIndex = 155;
+            this.groupBox9.TabStop = false;
+            this.groupBox9.Text = "Automatic calibrations";
             // 
             // FormMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.AutoScroll = true;
             this.AutoSize = true;
-            this.ClientSize = new System.Drawing.Size(839, 971);
+            this.ClientSize = new System.Drawing.Size(871, 784);
             this.Controls.Add(this.smallDebugWindow);
             this.Controls.Add(this.PausePlacement_button);
             this.Controls.Add(this.AbortPlacement_button);
@@ -4282,6 +4463,7 @@ namespace LitePlacer
             this.statusStrip1.PerformLayout();
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
+            this.groupBox9.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -4645,6 +4827,20 @@ namespace LitePlacer
         private CheckBox reverseRotation_checkbox;
         private ToolStripSeparator toolStripSeparator5;
         private ToolStripMenuItem pickupMultipleComponentsToolStripMenuItem;
+        private Label HeightOffsetLabel;
+        private Button HeightOffsetButton;
+        private TextBox ZCorrectionX;
+        private Label label60;
+        private TextBox ZCorrectionDeltaZ;
+        private Label label62;
+        private TextBox ZCorrectionY;
+        private Label label61;
+        private Button button7;
+        private Button calibrateZXYCompensation;
+        private Button calibrateSkew;
+        private Button calibrateXYmmRev;
+        private Button button8;
+        private GroupBox groupBox9;
     }
 }
 

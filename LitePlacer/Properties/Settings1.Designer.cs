@@ -610,5 +610,48 @@ namespace LitePlacer.Properties {
                 this["vacuumDeltaExpected"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double zTravelXCompensation {
+            get
+            {
+                return ((double)(this["zTravelXCompensation"]));
+            }
+            set
+            {
+                this["zTravelXCompensation"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double zTravelYCompensation {
+            get
+            {
+                return ((double)(this["zTravelYCompensation"]));
+            }
+            set
+            {
+                this["zTravelYCompensation"] = value;
+            }
+        }
+
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double zTravelTotalZ {
+            get
+            {
+                return ((double)(this["zTravelTotalZ"]));
+            }
+            set
+            {
+                this["zTravelTotalZ"] = value;
+            }
+        }
     }
 }
