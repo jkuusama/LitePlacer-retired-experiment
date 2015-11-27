@@ -194,8 +194,8 @@ namespace LitePlacer {
 
                 List<String> Line = SplitCSV(AllLines[i], delimiter);
                 // If layer is indicated and the component is not on this layer, skip it
-                if (LayerDataPresent &  MainForm.Bottom_checkBox.Checked & top_regex.IsMatch(Line[LayerIndex])) continue;
-                if (LayerDataPresent & !MainForm.Bottom_checkBox.Checked & bot_regex.IsMatch(Line[LayerIndex])) continue;
+                //if (LayerDataPresent &  MainForm.Bottom_checkBox.Checked & top_regex.IsMatch(Line[LayerIndex])) continue;
+                //if (LayerDataPresent & !MainForm.Bottom_checkBox.Checked & bot_regex.IsMatch(Line[LayerIndex])) continue;
 
 
                 PhysicalComponent p = new PhysicalComponent();

@@ -28,6 +28,8 @@ namespace LitePlacer {
         int FrameNumber;
         string MonikerString = "";
 
+        public bool VirtualBox = false;
+
         public Size FrameSize { get { return new Size(FrameSizeX, FrameSizeY); } }
         public int FrameSizeX { get { return (VideoSource != null) ? _videoSource.VideoCapabilities[videoCapabilityIndex].FrameSize.Width  : 0; } }
         public int FrameSizeY { get { return (VideoSource != null) ? _videoSource.VideoCapabilities[videoCapabilityIndex].FrameSize.Height : 0; } }
@@ -225,6 +227,8 @@ namespace LitePlacer {
 
         
         public int GetExposure() {
+            if (VirtualBox) { return -1;  }
+
             int val;
             CameraControlFlags flags;
             try {
@@ -249,6 +253,8 @@ namespace LitePlacer {
         }
 
         public int GetBrightness() {
+            if (VirtualBox) { return -1; }
+            
             int val;
             VideoProcAmpFlags flags;
             try {

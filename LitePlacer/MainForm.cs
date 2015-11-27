@@ -269,6 +269,7 @@ namespace LitePlacer {
             }
         }
 
+
         private void Tapes_CellMouseDown(object sender, DataGridViewCellMouseEventArgs e) {
             if (e.RowIndex != -1 && e.Button == MouseButtons.Right) {
                 var x = ((DataGridView)sender)[e.ColumnIndex, e.RowIndex];
@@ -301,7 +302,15 @@ namespace LitePlacer {
 
                 var m12 = new ToolStripMenuItem("Measure Available Parts On Tape");
                 m12.Click += (o,args) => {  Tapes.PopulateAvailableParts(y); };
-                        
+
+                var m14 = new ToolStripMenuItem("Set first hole");
+                m14.Click += (o, args) => { Tapes.SetFirstHole(y); };
+                var m15 = new ToolStripMenuItem("Set last hole");
+                m15.Click += (o, args) => { Tapes.SetLastHole(y); };
+
+                var m16 = new ToolStripMenuItem("Set as feeder");
+                m16.Click += (o, args) => { Tapes.SetAsFeeder(y); };
+
                 m.Items.Add(m1);
                 m.Items.Add(m2);
                 m.Items.Add(m10);
@@ -322,6 +331,11 @@ namespace LitePlacer {
                 m.Items.Add(m11);
                 m.Items.Add( new ToolStripSeparator() );
                 m.Items.Add(m12);
+
+                m.Items.Add(new ToolStripSeparator());
+                m.Items.Add(m14);
+                m.Items.Add(m15);
+                m.Items.Add(m16);
                 
                 Rectangle r = x.DataGridView.GetCellDisplayRectangle(x.ColumnIndex, x.RowIndex, false);
                 Point p = new Point(r.X + e.X, r.Y + e.Y);
@@ -416,6 +430,13 @@ namespace LitePlacer {
             f = Properties.Settings.Default.UpCam_YmmPerPixel * cameraView.upVideoProcessing.box.Height;
             UpCameraBoxY_textBox.Text = f.ToString("0.00", CultureInfo.InvariantCulture);
             UpCameraBoxYmmPerPixel_label.Text = "(" + Properties.Settings.Default.UpCam_YmmPerPixel.ToString("0.000", CultureInfo.InvariantCulture) + "mm/pixel)";
+
+            HeightOffsetLabel.Text = "X corr: " + Math.Round(Properties.Settings.Default.zTravelXCompensation, 2).ToString() +
+                " Y Corr: " + Math.Round(Properties.Settings.Default.zTravelYCompensation, 2).ToString();
+            ZCorrectionX.Text = Math.Round(Properties.Settings.Default.zTravelXCompensation, 2).ToString();
+            ZCorrectionY.Text = Math.Round(Properties.Settings.Default.zTravelYCompensation, 2).ToString();
+            ZCorrectionDeltaZ.Text = Math.Round(Properties.Settings.Default.zTravelTotalZ, 2).ToString();
+
 
             NeedleOffsetX_textBox.Text = Properties.Settings.Default.DownCam_NeedleOffsetX.ToString("0.00", CultureInfo.InvariantCulture);
             NeedleOffsetY_textBox.Text = Properties.Settings.Default.DownCam_NeedleOffsetY.ToString("0.00", CultureInfo.InvariantCulture);
@@ -837,6 +858,8 @@ namespace LitePlacer {
         
 
         private bool OpticalHoming_m() {
+            if (Cnc.Simulation) { return true;  }
+
             DisplayText("Optical homing");
             cameraView.SetDownCameraFunctionSet("homing");
             var loc = FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 20, .05);
@@ -885,7 +908,7 @@ namespace LitePlacer {
         private static int SetNeedleOffset_stage;
         private static double NeedleOffsetMarkX;
         private static double NeedleOffsetMarkY;
-
+        private static double NeedleOffsetMarkZ;
 
         private void Offset2Method_button_Click(object sender, EventArgs e) {
             Cnc.ZGuardOff();
@@ -903,8 +926,9 @@ namespace LitePlacer {
 
                 case 1:
                     SetNeedleOffset_stage = 2;
-                    NeedleOffsetMarkX = Cnc.CurrentX;
                     NeedleOffsetMarkY = Cnc.CurrentY;
+                    NeedleOffsetMarkX = Cnc.TrueX;
+                    NeedleOffsetMarkZ = Cnc.CurrentZ;
                     Cnc.Zup();
                     Cnc.CNC_XY(Cnc.CurrentX - 75.0, Cnc.CurrentY - 25.0);
                     cameraView.downSettings.DrawCross = true;
@@ -913,8 +937,32 @@ namespace LitePlacer {
 
                 case 2:
                     SetNeedleOffset_stage = 3;
-                    Properties.Settings.Default.DownCam_NeedleOffsetX = NeedleOffsetMarkX - Cnc.CurrentX;
-                    Properties.Settings.Default.DownCam_NeedleOffsetY = NeedleOffsetMarkY - Cnc.CurrentY;
+                    double CorrectedX, CorrectedY;
+                    if (!Needle.CorrectedPosition_m(Cnc.CurrentA, out CorrectedX, out CorrectedY)) {
+                        ShowSimpleMessageBox("Needle not calibrated");
+                        SetNeedleOffset_stage = 0;
+                        instructions_label.Visible = false;
+                        instructions_label.Text = "   ";
+                        Offset2Method_button.Text = "Camera Offset";
+                        Offset2Method_button.BackColor = ChangeNeedle_button.BackColor;
+                        break;
+                    }
+                    if (Properties.Settings.Default.zTravelTotalZ != 0 && NeedleOffsetMarkZ != 0)
+                    {
+                        Properties.Settings.Default.DownCam_NeedleOffsetX = NeedleOffsetMarkX - Cnc.TrueX
+                            + (Properties.Settings.Default.zTravelXCompensation /
+                            Properties.Settings.Default.zTravelTotalZ * NeedleOffsetMarkZ) + CorrectedX;
+                        Properties.Settings.Default.DownCam_NeedleOffsetY = NeedleOffsetMarkY - Cnc.CurrentY
+                            + (Properties.Settings.Default.zTravelYCompensation /
+                            Properties.Settings.Default.zTravelTotalZ * NeedleOffsetMarkZ) + CorrectedY;
+                    }
+                    else
+                    {
+                        Properties.Settings.Default.DownCam_NeedleOffsetX = NeedleOffsetMarkX - Cnc.TrueX
+                             + CorrectedX;
+                        Properties.Settings.Default.DownCam_NeedleOffsetY = NeedleOffsetMarkY - Cnc.CurrentY
+                             + CorrectedY;
+                    }
                     Properties.Settings.Default.Save();
                     NeedleOffsetX_textBox.Text = Properties.Settings.Default.DownCam_NeedleOffsetX.ToString("0.00", CultureInfo.InvariantCulture);
                     NeedleOffsetY_textBox.Text = Properties.Settings.Default.DownCam_NeedleOffsetY.ToString("0.00", CultureInfo.InvariantCulture);
@@ -924,7 +972,7 @@ namespace LitePlacer {
 
                 case 3:
                     SetNeedleOffset_stage = 0;
-                    upCameraZero_button_Click(null, null);
+                    /*upCameraZero_button_Click(null, null);*/
                     instructions_label.Visible = false;
                     instructions_label.Text = "   ";
                     Offset2Method_button.Text = "Camera Offset";
@@ -955,6 +1003,7 @@ namespace LitePlacer {
         public void CalibrateNeedle_button_Click(object sender, EventArgs e) {
             var p = Cnc.XYALocation;
             CalibrateNeedle_m();
+            Cnc.Zup();
             Cnc.CNC_XYA(p);
             cameraView.UpCameraReset();
         }
@@ -2301,6 +2350,7 @@ namespace LitePlacer {
             }
 
             foreach (var component in components) {
+                if (AbortPlacement) { return false; }
                 if (!PlaceComponent(component)) 
                     if (!ignoreErrors_checkbox.Checked) return false;
             }
@@ -2520,10 +2570,10 @@ namespace LitePlacer {
             // Pick it up:
             if (!tape.IsPickupZSet) {
                 if (!Needle.ProbeDown()) return false;
-                tape.PickupZ = Cnc.CurrentZ;
+                tape.PickupZ = Cnc.CurrentZ - Properties.Settings.Default.General_ProbingBackOff;
                 DisplayText("PickUpPart_m(): Probing Z= " + Cnc.CurrentZ);
             } else {
-                double Z = tape.PickupZ + 0.5; //not sure why the .5 is there - increased pressure?
+                double Z = tape.PickupZ; //not sure why the .5 is there - increased pressure?
                 DisplayText("PickUpPart_m(): Part pickup, Z" + Z);
                 if (!Cnc.CNC_Z(Z)) return false;
             }
@@ -2560,7 +2610,7 @@ namespace LitePlacer {
             if (!tape.IsPlaceZSet) {
                 DisplayText("PutPartDown_m(): Probing placement Z");
                 if (!Needle.ProbeDown()) return false;
-                tape.PlaceZ = Cnc.CurrentZ;
+                tape.PlaceZ = Cnc.CurrentZ - Properties.Settings.Default.General_ProbingBackOff;
                 DisplayText("PutPartDown_m(): placement Z= " + Cnc.CurrentZ);
             } else {
                 double Z = tape.PlaceZ;
@@ -2745,14 +2795,29 @@ namespace LitePlacer {
 
             // populate fiducal data
             PhysicalComponent[] Fiducials = Cad.ComponentData.Where(x => x.IsFiducial).ToArray();
-            if (Fiducials.Length < 2) {
+            if (Fiducials.Length < 2)
+            {
                 ShowSimpleMessageBox("Only " + Fiducials.Length + " fiducials set - not able to calibrate machine coordinates");
                 return false;
             }
 
-            // measure the actual data
-            for (int i = 0; i < Fiducials.Length; i++) {
-                if (!MeasureFiducial_m(ref Fiducials[i])) return false;
+            if (!Cnc.Simulation)
+            {
+                // measure the actual data
+                for (int i = 0; i < Fiducials.Length; i++)
+                {
+                    if (!MeasureFiducial_m(ref Fiducials[i])) return false;
+                }
+            }
+            else {
+                Fiducials[0].X_machine = 296.83;
+                Fiducials[0].Y_machine = 165.97;
+                Fiducials[1].X_machine = 57.23;
+                Fiducials[1].Y_machine = 165.17;
+                Fiducials[2].X_machine = 57.44;
+                Fiducials[2].Y_machine = 75.05;
+                Fiducials[3].X_machine = 297.21;
+                Fiducials[3].Y_machine = 75.65;
             }
 
             // Find the homographic tranformation from CAD data (fiducials.nominal) to measured machine coordinates
@@ -2791,7 +2856,7 @@ namespace LitePlacer {
 
             //apply mapping
             foreach (var component in Cad.ComponentData.Where(x => !x.IsFiducial).ToArray()) {
-                component.machine = lsm.Map(component.nominal);
+                component.machine = lsm.Map2(component.nominal);
             }
 
             // Refresh UI:
@@ -2887,6 +2952,11 @@ namespace LitePlacer {
                 return;
             }
             Needle.ProbeDown();
+
+            double tempZ = Cnc.CurrentZ;
+            Cnc.CNC_Z(tempZ - 10);
+            Cnc.CNC_Z(tempZ);
+            
             VacuumOn();
             Cnc.Zup();  // pick up
             Cnc.CNC_XY(Xmark, Ymark);
@@ -2900,6 +2970,16 @@ namespace LitePlacer {
             var loc = Cnc.XYALocation;
             if (!Needle.Move_m(loc)) return;
             Needle.ProbeDown();
+
+            double dX;
+            double dY;
+            if (Needle.CorrectedPosition_m(Cnc.CurrentA, out dX, out dY))
+            {
+                double tempZ = Cnc.CurrentZ;
+                //Cnc.CNC_Z(tempZ - 10);
+                Cnc.CNC_XY(loc.X + Needle.NeedleOffset.X - dX, loc.Y + Needle.NeedleOffset.Y - dY);
+                Cnc.CNC_Z(tempZ);
+            };
             VacuumOff();
             Cnc.Zup();  // back up
             Cnc.CNC_XY(loc);  // show results
@@ -2998,12 +3078,11 @@ namespace LitePlacer {
         }
 
         private void button1_Click(object sender, EventArgs e) {
-            // set angle to zero
-            Cnc.CNC_A(0);
+            setNeedleAtCameraPosition();
         }
 
         private void button2_Click(object sender, EventArgs e) {
-            var loc = Cnc.XYALocation;
+            /*var loc = Cnc.XYALocation;
             Cnc.Zup(); //needle up
             for (int i = 0; i <= 360; i += 90) {
                 Needle.Move_m(loc); // move to target
@@ -3012,8 +3091,8 @@ namespace LitePlacer {
                 Cnc.Zup();
 
                 loc.A = i;
-            }
-
+            }*/
+            calibrateAll((Button) sender);
         }
 
 
@@ -3588,6 +3667,8 @@ namespace LitePlacer {
         }
 
         private void SerialMonitor_richTextBox_TextChanged(object sender, EventArgs e) {
+            SerialMonitor_richTextBox.Text = "";
+            return;
             smallDebugWindow.Text = ((RichTextBox)sender).Text;
             smallDebugWindow.SelectionStart = smallDebugWindow.Text.Length;
             smallDebugWindow.ScrollToCaret();
@@ -3704,7 +3785,629 @@ namespace LitePlacer {
             
         }
 
+        private bool setNeedleAtCameraPosition()
+        {
+            var loc = Cnc.XYALocation;
+            SetNeedleOffset_stage = 3;
 
+            double CorrectedX, CorrectedY;
+            if (!Needle.CorrectedPosition_m(Cnc.CurrentA, out CorrectedX, out CorrectedY))
+            {
+                ShowSimpleMessageBox("Needle not calibrated");
+                return false;
+            }
+            loc.X -= CorrectedX;
+            loc.Y -= CorrectedY;
+            //loc.X -= loc.Y * CNC.SquareCorrection;
+            return Needle.Move_m(loc);
+        }
+
+        private static int HeightOffset_stage;
+        private PartLocation HeightOffset_StartLocation = new PartLocation();
+        private void HeightOffsetButton_Click(object sender, EventArgs e)
+        {
+            switch (HeightOffset_stage)
+            {
+                case 0:
+                    instructions_label.Text = "Focus the camera onto a point";
+                    instructions_label.Visible = true;
+                    Cnc.CNC_Z(0);
+                    HeightOffsetButton.Text = "Next";
+                    HeightOffsetButton.BackColor = Color.Yellow;
+                    HeightOffset_stage++;
+                    break;
+                case 1:
+                    Properties.Settings.Default.zTravelXCompensation = 0;
+                    Properties.Settings.Default.zTravelYCompensation = 0;
+                    Properties.Settings.Default.zTravelTotalZ = 1;
+
+                    if (!setNeedleAtCameraPosition())
+                    {
+                        ShowSimpleMessageBox("FAILURE!");
+                        return;
+                    }
+
+                    HeightOffset_StartLocation.X = Cnc.TrueX;
+                    HeightOffset_StartLocation.Y = Cnc.CurrentY;
+
+                    Cnc.CNC_Z(Properties.Settings.Default.ZDistanceToTable);
+                    Needle.ProbingMode(true);
+                    
+                    Cnc.ZGuardOff();
+                    
+                    instructions_label.Text = "Jog camera back to the original point";
+                    HeightOffset_stage++;
+                    break;
+                case 2:
+                    Cnc.ZGuardOn();
+
+                    double CorrectedX = 0, CorrectedY = 0;
+                    if (!Needle.CorrectedPosition_m(Cnc.CurrentA, out CorrectedX, out CorrectedY))
+                    {
+                        ShowSimpleMessageBox("Needle not calibrated");
+                        return;
+                    }
+
+                    double xDiff = Cnc.TrueX - HeightOffset_StartLocation.X;
+                    double yDiff = Cnc.CurrentY - HeightOffset_StartLocation.Y;
+
+                    Properties.Settings.Default.zTravelXCompensation = xDiff;
+                    Properties.Settings.Default.zTravelYCompensation = yDiff;
+                    /*
+                                        Properties.Settings.Default.zTravelXCompensation = Cnc.CurrentX - 
+                                            HeightOffset_StartLocation.X - Properties.Settings.Default.DownCam_NeedleOffsetX + CorrectedX;
+                                        Properties.Settings.Default.zTravelYCompensation = Cnc.CurrentY - 
+                                            HeightOffset_StartLocation.Y - Properties.Settings.Default.DownCam_NeedleOffsetY + CorrectedY;
+                    */
+                    Properties.Settings.Default.zTravelTotalZ = Cnc.CurrentZ;
+
+                    HeightOffsetLabel.Text = "X corr: " + Math.Round(Properties.Settings.Default.zTravelXCompensation, 2).ToString() +
+                        " Y Corr: " + Math.Round(Properties.Settings.Default.zTravelYCompensation, 2).ToString();
+
+                    ZCorrectionX.Text = Math.Round(Properties.Settings.Default.zTravelXCompensation, 2).ToString();
+                    ZCorrectionY.Text = Math.Round(Properties.Settings.Default.zTravelYCompensation, 2).ToString();
+                    ZCorrectionDeltaZ.Text = Math.Round(Properties.Settings.Default.zTravelTotalZ, 2).ToString();
+
+                    Needle.ProbingMode(false);
+                    Cnc.CNC_Z(0);
+                    HeightOffsetButton.Text = "Height Offset";
+                    HeightOffsetButton.BackColor = ChangeNeedle_button.BackColor;
+                    instructions_label.Text = "";
+                    instructions_label.Visible = false;
+                    HeightOffset_stage = 0;
+                    Z0toPCB_BasicTab_label.Text = Properties.Settings.Default.ZDistanceToTable.ToString("0.00", CultureInfo.InvariantCulture);
+                    Z_Backoff_label.Text = Properties.Settings.Default.General_ProbingBackOff.ToString("0.00", CultureInfo.InvariantCulture);
+                    Properties.Settings.Default.Save();
+                    break;
+            }
+        }
+
+        private void label60_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void UpCameraBoxX_textBox_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void ZCorrectionX_KeyPress(object sender, KeyPressEventArgs e) {
+            if (e.KeyChar == '\r') {
+                UpdateZCorrection();
+            }
+        }
+
+        private void ZCorrectionX_Leave(object sender, EventArgs e) {
+            UpdateZCorrection();
+        }
+
+        private void ZCorrectionY_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == '\r')
+            {
+                UpdateZCorrection();
+            }
+        }
+
+        private void ZCorrectionY_Leave(object sender, EventArgs e)
+        {
+            UpdateZCorrection();
+        }
+
+        private void ZCorrectionDeltaZ_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == '\r')
+            {
+                UpdateZCorrection();
+            }
+        }
+
+        private void ZCorrectionDeltaZ_Leave(object sender, EventArgs e)
+        {
+            UpdateZCorrection();
+        }
+
+        private void UpdateZCorrection() {
+            double val;
+            if (double.TryParse(ZCorrectionX.Text, out val)) Properties.Settings.Default.zTravelXCompensation = val;
+            if (double.TryParse(ZCorrectionY.Text, out val)) Properties.Settings.Default.zTravelYCompensation = val;
+            if (double.TryParse(ZCorrectionDeltaZ.Text, out val)) Properties.Settings.Default.zTravelTotalZ = val;            
+        }
+
+
+        private static int calibrateAllStage = 0, calibrateXYmmRevStage = 0;
+        private static PartLocation calibrateAllStartingPoint = null, calibrateAllEdgeX = null, calibrateAllEdgeY = null;
+
+        private void calibrateXYmmRev_m(Button sender)
+        {
+            PartLocation loc = null;
+            switch (calibrateXYmmRevStage) {
+                case 0:
+                    DialogResult dialogresult = ShowMessageBox("All down camera settings, travel settings and offsets will be reset", "Resetting Data", MessageBoxButtons.OKCancel);
+                    if (dialogresult == DialogResult.Cancel) { return; }
+
+                    // Reset all necessary values
+
+                    tr1_textBox.Text = "40";
+                    Cnc.CNC_Write_m("{\"1tr\":" + tr1_textBox.Text + "}");
+                    Thread.Sleep(50);
+
+                    tr2_textBox.Text = "40";
+                    Cnc.CNC_Write_m("{\"2tr\":" + tr2_textBox.Text + "}");
+                    Thread.Sleep(50);
+
+                    SquareCorrection_textBox.Text = "0";
+                    setting.CNC_SquareCorrection = 0;
+                    CNC.SquareCorrection = 0;
+
+                    instructions_label.Text = "Jog the machine to the center and place the measurement papers center dot under the camera";
+                    instructions_label.Visible = true;
+                    Cnc.CNC_Home_m("Z");
+                    sender.Text = "Next";
+                    sender.BackColor = Color.Yellow;
+                    calibrateXYmmRevStage++;
+                    break;
+                case 1:
+                    if (Cnc.Simulation)
+                    {
+                        loc = new PartLocation();
+                        loc = Cnc.XYLocation;
+                    }
+                    else
+                    {
+                        cameraView.SetDownCameraFunctionSet("homing");
+                        cameraView.downSettings.FindCircles = true;
+                    retryMidpoint:
+                        loc = FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 2, .1);
+                        if (loc == null)
+                        {
+                            ShowSimpleMessageBox("Error, middle point not found - try again");
+                            return;
+                        }
+                        else
+                        {
+                            if (cameraView.ShowMessageBox("Please verify point placement. Is point found correctly?", "verification",
+                                MessageBoxButtons.YesNo) == DialogResult.No) { goto retryMidpoint; }
+                        }
+                    }
+                    calibrateAllStartingPoint = loc;
+                    Cnc.CNC_XY(loc.X + 175, loc.Y);
+
+                    instructions_label.Text = "Jog camera to the right edge of the circle only using the X axis";
+                    calibrateXYmmRevStage++;
+                    break;
+                case 2:
+                    if (Cnc.XYLocation.Y != calibrateAllStartingPoint.Y ||
+                        Cnc.XYLocation.X < calibrateAllStartingPoint.X)
+                    {
+                        ShowSimpleMessageBox("Y axis moved or X axis more negative than starting point - try again");
+                        Cnc.CNC_XY(loc.X + 175, loc.Y);
+                        return;
+                    }
+
+                    calibrateAllEdgeX = Cnc.XYLocation;
+                    Cnc.CNC_XY(calibrateAllStartingPoint.X, calibrateAllStartingPoint.Y + 175);
+
+                    instructions_label.Text = "Jog camera to the top edge of the circle only using the Y axis";
+                    calibrateXYmmRevStage++;
+                    break;
+                case 3:
+                    if (Cnc.XYLocation.X != calibrateAllStartingPoint.X ||
+                        Cnc.XYLocation.Y < calibrateAllStartingPoint.Y)
+                    {
+                        ShowSimpleMessageBox("X axis moved or Y axis more negative than starting point - try again");
+                        Cnc.CNC_XY(calibrateAllStartingPoint.X, calibrateAllStartingPoint.Y + 175);
+                        return;
+                    }
+                    calibrateAllEdgeY = Cnc.XYLocation;
+
+                    double xStep, yStep;
+                    xStep = calibrateAllEdgeX.X / (calibrateAllStartingPoint.X + 175) * 40;
+                    yStep = calibrateAllEdgeY.Y / (calibrateAllStartingPoint.Y + 175) * 40;
+
+                    instructions_label.Text = "The calculated xStep is " + Math.Round(xStep, 2).ToString() +
+                        " mm/rev, the calculated Y step is " + Math.Round(yStep, 2).ToString() +
+                        " mm/rev";
+
+                    tr1_textBox.Text = xStep.ToString();
+                    Cnc.CNC_Write_m("{\"1tr\":" + tr1_textBox.Text + "}");
+                    Thread.Sleep(50);
+
+                    tr2_textBox.Text = yStep.ToString();
+                    Cnc.CNC_Write_m("{\"2tr\":" + tr2_textBox.Text + "}");
+                    Thread.Sleep(50);
+                    calibrateXYmmRevStage = 0;
+                    break;
+
+            }
+        }
+
+        private void calibrateSkew_m()
+        {
+            PartLocation loc = null;
+        retrySkew:
+            SquareCorrection_textBox.Text = "0";
+            setting.CNC_SquareCorrection = 0;
+            CNC.SquareCorrection = 0;
+
+            instructions_label.Text = "Finding center dot";
+
+            Cnc.CNC_XY(calibrateAllStartingPoint);
+            if (Cnc.Simulation)
+            {
+                loc = Cnc.XYLocation;
+            }
+            else
+            {
+                cameraView.SetDownCameraFunctionSet("homing");
+                cameraView.downSettings.FindCircles = true;
+            retryMidpoint:
+                loc = FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 2, .1);
+                if (loc == null)
+                {
+                    ShowSimpleMessageBox("Error, middle point not found - try again");
+                    return;
+                }
+                if (cameraView.ShowMessageBox("Please verify point placement. Is point found correctly?", "verification",
+                    MessageBoxButtons.YesNo) == DialogResult.No) { goto retryMidpoint; }
+            }
+            calibrateAllStartingPoint = loc;
+
+            instructions_label.Text = "Finding point at X axis";
+            Cnc.CNC_XY(calibrateAllStartingPoint.X + 185.5, calibrateAllStartingPoint.Y);
+
+            if (Cnc.Simulation)
+            {
+                loc = new PartLocation();
+                loc.X = calibrateAllStartingPoint.X + 185.5;
+                loc.Y = calibrateAllStartingPoint.Y - 1;
+            }
+            else
+            {
+            retryXPoint:
+                loc = FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 2, .1);
+                if (loc == null)
+                {
+                    ShowSimpleMessageBox("Error, x axis point not found - try again");
+                    return;
+                }
+                if (cameraView.ShowMessageBox("Please verify point placement. Is point found correctly?", "verification",
+                    MessageBoxButtons.YesNo) == DialogResult.No) { goto retryXPoint; }
+            }
+            calibrateAllEdgeX = loc;
+
+            double paperRotation;
+            paperRotation = Math.Asin((calibrateAllEdgeX.X - calibrateAllStartingPoint.X) /
+                Math.Sqrt(Math.Pow(calibrateAllEdgeX.X - calibrateAllStartingPoint.X, 2) +
+                Math.Pow(calibrateAllEdgeX.Y - calibrateAllStartingPoint.Y, 2)));
+
+            instructions_label.Text = "Finding point at Y axis using a calculated rotation of " +
+                (paperRotation / Math.PI * 180).ToString() + " degrees";
+
+            PartLocation projectedEdgeY = new PartLocation();
+
+            projectedEdgeY.X = calibrateAllStartingPoint.X + 185.5 * Math.Sin(paperRotation - (Math.PI / 2));
+            projectedEdgeY.Y = calibrateAllStartingPoint.Y + 185.5 * Math.Cos(paperRotation - (Math.PI / 2));
+
+            Cnc.CNC_XY(projectedEdgeY);
+            if (Cnc.Simulation)
+            {
+                loc = new PartLocation();
+                loc.X = calibrateAllStartingPoint.X - 2;
+                loc.Y = calibrateAllStartingPoint.Y + 185.5;
+            }
+            else
+            {
+                cameraView.SetDownCameraFunctionSet("homing");
+                cameraView.downSettings.FindCircles = true;
+            retryYPoint:
+                loc = FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 4, .1);
+                if (loc == null)
+                {
+                    ShowSimpleMessageBox("Error, y axis point not found - try again");
+                    return;
+                }
+                if (cameraView.ShowMessageBox("Please verify point placement. Is point found correctly?", "verification",
+                    MessageBoxButtons.YesNo) == DialogResult.No) { goto retryYPoint; }
+            }
+            calibrateAllEdgeY = loc;
+
+            double yOffset = calibrateAllEdgeY.Y - projectedEdgeY.Y;
+            if (yOffset > 0.3 || yOffset < -0.3)
+            {
+                switch (ShowMessageBox("Y offset off by " + Math.Round(yOffset, 3).ToString() +
+                    "mm, try again?", "Operation failed", MessageBoxButtons.AbortRetryIgnore))
+                {
+                    case DialogResult.Retry:
+                        goto retrySkew;
+                        break;
+                    case DialogResult.Ignore:
+                        goto ignoreSkewError;
+                }
+                //sender.BackColor = ChangeNeedle_button.BackColor;
+                instructions_label.Text = "";
+                instructions_label.Visible = false;
+                calibrateAllStage = 0;
+                return;
+            };
+        ignoreSkewError:
+            double skew = (calibrateAllEdgeY.X - projectedEdgeY.X) / 185.5;
+            instructions_label.Text = "Calculated skew is " + Math.Round(skew, 5).ToString()
+                + ", Y offset is " + Math.Round(yOffset, 3) +
+                " press next to calibrate down camera mm/pixel values";
+            SquareCorrection_textBox.Text = skew.ToString();
+            setting.CNC_SquareCorrection = skew;
+            CNC.SquareCorrection = skew;
+            Thread.Sleep(2000);
+
+            instructions_label.Text = "Verifying data";
+            calibrateAllStartingPoint.X -= calibrateAllStartingPoint.Y * setting.CNC_SquareCorrection;
+            Cnc.CNC_XY(calibrateAllStartingPoint);
+            loc = FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 4, .1);
+            
+            if (cameraView.ShowMessageBox("Please verify point placement. Is point found correctly?", "verification",
+                MessageBoxButtons.YesNo) == DialogResult.No) { goto retrySkew; }
+
+            calibrateAllStartingPoint = loc;
+
+            Cnc.CNC_XY(calibrateAllStartingPoint.X + 185.5, calibrateAllStartingPoint.Y);
+            if (cameraView.ShowMessageBox("Please verify point placement. Is point found correctly?", "verification",
+                MessageBoxButtons.YesNo) == DialogResult.No) { goto retrySkew; }
+
+            Cnc.CNC_XY(calibrateAllStartingPoint.X, calibrateAllStartingPoint.Y + 185.5);
+            if (cameraView.ShowMessageBox("Please verify point placement. Is point found correctly?", "verification",
+                MessageBoxButtons.YesNo) == DialogResult.No) { goto retrySkew; }
+        }
+
+        private void calibrateXYZcompensation()
+        {
+            PartLocation loc = null;
+retryAll:
+            cameraView.SetDownCameraFunctionSet("");
+
+            ZCorrectionX.Text = "0";
+            ZCorrectionY.Text = "0";
+            ZCorrectionDeltaZ.Text = "0";
+            UpdateZCorrection();
+
+            instructions_label.Text = "Calibrating Z dependent X/Y offset";
+
+            Cnc.CNC_Z(0);
+            Cnc.CNC_XY(calibrateAllStartingPoint);
+
+            if (!Cnc.Simulation)
+            {
+                cameraView.SetDownCameraFunctionSet("homing");
+                cameraView.downSettings.FindCircles = true;
+            retryMidPoint:
+                loc = FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 2, .1);
+                if (loc == null)
+                {
+                    ShowSimpleMessageBox("Error, middle point not found - try again");
+                    return;
+                }
+                if (cameraView.ShowMessageBox("Please verify point placement. Is point found correctly?", "verification",
+                    MessageBoxButtons.YesNo) == DialogResult.No) { goto retryMidPoint; }
+
+                calibrateAllStartingPoint = new PartLocation();
+                calibrateAllStartingPoint.X = Cnc.TrueX;
+                calibrateAllStartingPoint.Y = Cnc.CurrentY;
+            }
+
+
+            Cnc.CNC_Z(Properties.Settings.Default.ZDistanceToTable -
+                Properties.Settings.Default.General_ProbingBackOff);
+            Cnc.ZGuardOff();
+
+            if (Cnc.Simulation)
+            {
+                loc = new PartLocation();
+                loc.X = calibrateAllStartingPoint.X + 1;
+                loc.Y = calibrateAllStartingPoint.Y - 1;
+            }
+            else
+            {
+                cameraView.SetDownCameraFunctionSet("homing");
+                cameraView.downSettings.FindCircles = true;
+            retryMidPointAgain:
+                for (int i = 0; i < 8; i++)
+                {
+                    loc = FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 1.5, .05);
+                    if (loc != null) break;
+                }
+                if (loc == null)
+                {
+                    ShowSimpleMessageBox("Error, middle point not found - try again");
+                    return;
+                }
+                if (cameraView.ShowMessageBox("Please verify point placement. Is point found correctly?", "verification",
+                    MessageBoxButtons.YesNo) == DialogResult.No) { goto retryMidPointAgain; }
+                Cnc.ZGuardOn();
+            }
+
+            ZCorrectionX.Text = (Cnc.TrueX - calibrateAllStartingPoint.X).ToString();
+
+            ZCorrectionY.Text = (Cnc.CurrentY - calibrateAllStartingPoint.Y).ToString();
+
+            ZCorrectionDeltaZ.Text = (Properties.Settings.Default.ZDistanceToTable -
+                Properties.Settings.Default.General_ProbingBackOff).ToString();
+            UpdateZCorrection();
+
+            Cnc.CNC_Z(0);
+            instructions_label.Text = "";
+            instructions_label.Visible = false;
+
+            if (!Cnc.Simulation)
+            {
+                cameraView.SetDownCameraFunctionSet("homing");
+                cameraView.downSettings.FindCircles = true;
+            retryMidPoint3:
+                loc = FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 2, .1);
+                if (loc == null)
+                {
+                    ShowSimpleMessageBox("Error, middle point not found - try again");
+                    return;
+                }
+                if (cameraView.ShowMessageBox("Please verify point placement. Is point found correctly?", "verification",
+                    MessageBoxButtons.YesNo) == DialogResult.No) { goto retryMidPoint3; }
+                calibrateAllStartingPoint = loc;
+            }
+            setNeedleAtCameraPosition();
+            Cnc.CNC_Z(Properties.Settings.Default.ZDistanceToTable -
+                Properties.Settings.Default.General_ProbingBackOff);
+            if (cameraView.ShowMessageBox("Please verify touchdown point. Is point found correctly?", "verification",
+                MessageBoxButtons.YesNo) == DialogResult.No) { goto retryAll; }
+            Cnc.CNC_Z(0);
+        }
+                    
+        private void calibrateAll(Button sender)
+        {
+            PartLocation loc = null;
+            switch (calibrateAllStage)
+            {
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                    calibrateXYmmRev_m(sender);
+                    if (calibrateAllStage == 3)
+                    {
+                        instructions_label.Text = instructions_label.Text + " Press next to continue";
+                    }
+                    calibrateAllStage++;
+                    break;
+
+                case 4:
+                    calibrateSkew_m();
+
+                    instructions_label.Text = "Calculated skew is " + 
+                        Math.Round(setting.CNC_SquareCorrection, 5).ToString()
+                        +  ". Press next to calibrate down camera mm/pixel values";
+                    calibrateAllStage++;
+                    break;
+                
+                case 5:
+                    if (!Cnc.Simulation) { 
+                        instructions_label.Text = "Calibrating down camera mm/pixel";
+                        Application.DoEvents();
+                        button_camera_calibrate_Click(null, null);
+
+                        instructions_label.Text = "Calibrating up camera zero positin";
+                        Application.DoEvents();
+                        upCameraZero_button_Click(null, null);
+
+                        instructions_label.Text = "Calibrating up camera mm/pixel";
+                        Application.DoEvents();
+                        UpCamera_Calibration_button_Click(null, null);
+                    
+                        instructions_label.Text = "Calibrating needle wobble";
+                        Application.DoEvents();
+                        CalibrateNeedle_button_Click(null, null);
+                    }
+
+
+                    instructions_label.Text="Please calibrate needle to down camera offset, press next when ready";
+                    calibrateAllStage++;
+                    break;
+                    
+                case 6:
+                    calibrateXYZcompensation();
+
+                    sender.BackColor = ChangeNeedle_button.BackColor;
+                    instructions_label.Text = "";
+                    instructions_label.Visible = false;
+                    calibrateAllStage = 0;
+                    break;
+                
+            }
+        }
+
+        private void verifyPlacements_m() {
+            if (JobData_GridView.RowCount == 0)
+            {
+                ShowSimpleMessageBox("No data");
+                return;
+            }
+reinitialize:
+            IsMeasurementValid = false;
+            ReMeasure_button.BackColor = Color.Yellow;
+            IsMeasurementValid = BuildMachineCoordinateData_m();            
+
+            JobData_GridView.SelectAll();
+
+            List<PhysicalComponent> placementList = new List<PhysicalComponent>();
+
+            for (int i = 0; i < JobData_GridView.SelectedCells.Count; i++)
+            {
+                var job = (JobData)JobData_GridView.SelectedCells[i].OwningRow.DataBoundItem;
+                foreach (var component in job.GetComponents())
+                {
+                    if (component.IsFiducial && !placementList.Contains(component)) placementList.Add(component);
+                }
+            }
+
+            Random random = new Random();
+            int k, l;
+            for (int j = 0; j < 10; j++) {
+            tryAgain:
+                l = random.Next(0, JobData_GridView.SelectedCells.Count);
+                var job = (JobData)JobData_GridView.SelectedCells[l].OwningRow.DataBoundItem;
+                k = random.Next(0, job.Components.Count);
+                var component = job.Components.ElementAt(k);
+                if (component.IsFiducial) { goto tryAgain; }
+                if (!placementList.Contains(component)) placementList.Add(component);
+            }
+
+            foreach (var component in placementList)
+            {
+                Cnc.CNC_XY(component.machine);
+                if (cameraView.ShowMessageBox("Please verify component position for component " + component.Designator +
+                    ", is it correct?", "verification",
+                    MessageBoxButtons.YesNo) == DialogResult.No) { goto reinitialize; }
+            }
+        }
+
+
+        private void calibrateXYmmRev_Click(object sender, EventArgs e)
+        {
+            calibrateXYmmRev_m((Button)sender);
+        }
+
+        private void calibrateSkew_Click(object sender, EventArgs e)
+        {
+            calibrateSkew_m();
+        }
+
+        private void calibrateZXYCompensation_Click(object sender, EventArgs e)
+        {
+            calibrateXYZcompensation();
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            verifyPlacements_m();
+        }
 
     }	// end of: 	public partial class FormMain : Form
 

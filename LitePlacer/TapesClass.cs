@@ -111,20 +111,28 @@ namespace LitePlacer {
                 MainForm.ShowSimpleMessageBox("First hole not set and part not set - calibrate this first");
                 return false;
             }
-            MainForm.cameraView.downSettings.FindCircles = true;
 
-            // move to closest hole to the part we are looking for 
-            Cnc.CNC_XY(to.GetNearestCurrentPartHole());
-            var hole = MainForm.FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 1.5, .05);
-            if (hole == null) {
-                //MainForm.ShowSimpleMessageBox("Unable to center on nearest hole");
-                return false;
+            if (to.IsLocationBased)
+            {
+                Cnc.CNC_XY(GetLocationBasedComponent(to));
             }
-            MainForm.cameraView.DownCameraReset();
+            else
+            {
+                MainForm.cameraView.downSettings.FindCircles = true;
+                // move to closest hole to the part we are looking for 
+                Cnc.CNC_XY(to.GetNearestCurrentPartHole());
+                var hole = MainForm.FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 1.5, .05);
+                if (hole == null)
+                {
+                    //MainForm.ShowSimpleMessageBox("Unable to center on nearest hole");
+                    return false;
+                }
+                MainForm.cameraView.DownCameraReset();
 
-            // move camera on top of the part, and then move from there to the part to pick up
-            var offset = to.GetCurrentPartLocation() - to.GetNearestCurrentPartHole();
-            Cnc.CNC_XY(hole + offset);
+                // move camera on top of the part, and then move from there to the part to pick up
+                var offset = to.GetCurrentPartLocation() - to.GetNearestCurrentPartHole();
+                Cnc.CNC_XY(hole + offset);
+            }
             var c = MainForm.cameraView.downVideoProcessing.FrameCenter;
             MainForm.cameraView.downVideoProcessing.Arrows.Add(new Shapes.Arrow(c.X,c.Y, to.PartAngle, 100) );
             return true;
@@ -143,8 +151,8 @@ namespace LitePlacer {
         public bool ClearHeights_m(string Id) {
             var tape = GetTapeObjByID(Id);
             if (tape == null) return false;
-            tape.PickupZ = -1;
-            tape.PlaceZ = -1;
+            //tape.PickupZ = -1;
+            //tape.PlaceZ = -1;
             return true;
         }
 
@@ -182,6 +190,10 @@ namespace LitePlacer {
                 MainForm.DisplayText("Part Detected : " + thing);
             }
 
+
+            if (tapeObj.IsLocationBased) {
+                targetLocation = GetLocationBasedComponent(tapeObj);
+            } else
             // enhanced part detection
             if (tapeObj.FirstHole != null) {
                 SetCurrentTapeMeasurement(tapeObj.TapeType);
@@ -460,6 +472,136 @@ namespace LitePlacer {
             }            
         }
 
+        public bool SetFirstHole(TapeObj t)
+        {
+            var originalPos = Cnc.XYLocation;
 
+            MainForm.cameraView.SetDownCameraFunctionSet(t.TapeType);
+            
+            var holepos = MainForm.FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 1.8, 0.1); //find this hole with high precision
+            MainForm.cameraView.SetDownCameraFunctionSet("");
+            if (holepos == null)
+            {
+                switch (MainForm.ShowMessageBox("Cannot find hole, use manual position?", "Hole not found", MessageBoxButtons.YesNo))
+                {
+                    case DialogResult.No:
+                        return false;
+                }
+                holepos = originalPos;
+            }
+            t.FirstHole = holepos;
+            return true;
+        }
+
+        public bool SetLastHole(TapeObj t)
+        {
+            if (t.FirstHole == null) {
+                MainForm.DisplayText("First hole not set", Color.Red);
+                return false;
+            }
+
+            var originalPos = Cnc.XYLocation;
+            
+            MainForm.cameraView.SetDownCameraFunctionSet(t.TapeType);
+            
+            var holepos = MainForm.FindPositionAndMoveToClosest(Shapes.ShapeTypes.Circle, 1.8, 0.1); //find this hole with high precision
+
+            MainForm.cameraView.SetDownCameraFunctionSet("");
+            
+            if (holepos == null)
+            {
+                //MainForm.DisplayText("Cannot find hole", Color.Red);
+                //return false;
+                switch (MainForm.ShowMessageBox("Cannot find hole, use manual position?", "Hole not found", MessageBoxButtons.YesNo))
+                {
+                    case DialogResult.No:
+                        return false;
+                }
+                holepos = originalPos;
+            }
+            
+            double distance = t.FirstHole.DistanceTo(holepos);
+   
+            if ((Math.Abs(distance % t.PartPitch) > 0.4) && ((t.PartPitch - Math.Abs(distance % t.PartPitch)) > 0.4)) {
+//                MainForm.DisplayText("Part pitch and hole position does not make sense, please redo", Color.Red);
+                switch (MainForm.ShowMessageBox("Part pitch and hole position seems inconsistent, continue?", "Inconsistency", MessageBoxButtons.YesNo))
+                {
+                    case DialogResult.No:
+                        return false;
+                }
+            }
+            t.LastHole = holepos;
+            
+            /* Calculate tape angle given the first and last hole
+             * the first hole is always considered to be the furthest away from the reel
+             */
+            double Xd = t.LastHole.X - t.FirstHole.X;
+            double Yd = t.LastHole.Y - t.FirstHole.Y;
+            t.SetTapeOrientation(Xd, Yd);
+            double TapeAngle = t.TapeOrientation.ToRadians();
+
+            /* Calculate the X and Y movements required to get to the next hole */
+            double XMove = Math.Abs(t.PartPitch) * Math.Cos(TapeAngle);
+            double YMove = Math.Abs(t.PartPitch) * Math.Sin(TapeAngle);
+
+            /* Calculate the distance to the part from the hole given the angle */
+            double XHoleToSpacing = Math.Abs(t.HoleToPartSpacingX) * Math.Cos(-TapeAngle) + Math.Abs(t.HoleToPartSpacingY) * Math.Sin(-TapeAngle);
+            double YHoleToSpacing = Math.Abs(t.HoleToPartSpacingY) * Math.Cos(TapeAngle) + Math.Abs(t.HoleToPartSpacingX) * Math.Sin(TapeAngle);
+
+            t.AvailableParts.Clear();
+
+            NamedLocation ReturnLocation;
+            for (int i = 0; i < (Math.Round(t.LastHole.DistanceTo(t.FirstHole) / t.PartPitch)); i++)
+            {
+                ReturnLocation = new NamedLocation();
+
+                ReturnLocation.X = t.FirstHole.X + i * XMove + XHoleToSpacing;
+                ReturnLocation.Y = t.FirstHole.Y + i * YMove + YHoleToSpacing;
+                ReturnLocation.A = t.OriginalPartOrientationVector.ToDegrees();
+
+                ReturnLocation.Name = t.ID + "_" + i.ToString();
+                t.AvailableParts.Add(ReturnLocation);
+
+            }
+
+            t.IsFullyCalibrated = true;
+            t.IsLocationBased = true;
+            return true;
+        }
+
+        public bool SetAsFeeder(TapeObj t)
+        {
+            string input = Microsoft.VisualBasic.Interaction.InputBox("Number of components on reel", "Reel size", "Default", -1, -1);
+            int reelSize = int.Parse(input);
+
+            if (reelSize < 1) { return false; };
+
+            t.AvailableParts.Clear();
+
+            NamedLocation ReturnLocation;
+            for (int i = 1; i < reelSize+1; i++)
+            {
+                ReturnLocation = new NamedLocation();
+
+                ReturnLocation.X = Cnc.CurrentX;
+                ReturnLocation.Y = Cnc.CurrentY;
+                ReturnLocation.A = t.OriginalPartOrientationVector.ToDegrees();
+
+                ReturnLocation.Name = t.ID + "_" + i.ToString();
+                t.AvailableParts.Add(ReturnLocation);
+
+            }
+
+            t.IsFullyCalibrated = true;
+            t.IsLocationBased = true;
+
+            return true;
+        }
+
+        private PartLocation GetLocationBasedComponent(TapeObj t) {
+            if (!t.IsFullyCalibrated || !t.IsLocationBased) { return null;  }
+            if (t.CurrentPart >= t.NumberPartsAvailable) { return null;  }
+            return t.AvailableParts.ElementAt(t.CurrentPart);
+        }
     }
 }
